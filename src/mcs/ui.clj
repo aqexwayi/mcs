@@ -558,23 +558,14 @@
         (do
           (reset! scada-config nc)
           (if (db/connect! @scada-config)
-            (do
-              (sim/simulation-turn-on! nc)
-              (config! main-frame 
-                       :title (str main-frame-title 
-                                   " [ 运行 : 仿真周期=" (:interval nc) "s ]"))
-              (.setEnabled menu-item-scada-start false)
-              (.setEnabled menu-item-scada-stop true))
+            (sim/simulation-turn-on! nc)
             (alert main-frame "无法连接数据库")))))))
 
 (defn scada-stop! [e]
   (if (sim/simulation-running?)
     (do
       (db/disconnect!)
-      (sim/simulation-turn-off!)
-      (config! main-frame :title (str main-frame-title " [ 停止 ] "))
-      (.setEnabled menu-item-scada-start true)
-      (.setEnabled menu-item-scada-stop false))
+      (sim/simulation-turn-off!))
     ))
 
 (defn sort-blocks-by-id! [e]
@@ -655,13 +646,27 @@
    :menubar main-menu
    :content main-panel ))
 
+(defn ui-thread [e]
+  (if (sim/simulation-running?)
+    (let [c (sim/get-simulation-interval)
+          title (str main-frame-title " [ 运行 : 仿真周期 = " c "s ]")]
+      (config! main-frame :title title)
+      (.setEnabled menu-item-scada-start false)
+      (.setEnabled menu-item-scada-stop true))
+    (let [title (str main-frame-title " [ 停止 ] ")]
+      (config! main-frame :title title)
+      (.setEnabled menu-item-scada-start true)
+      (.setEnabled menu-item-scada-stop false)
+      ))
+  (repaint! main-panel))
+
 (defn -main [& args]
   (if-not (mac/valid-mac-address?)
     (println "无法运行未经授权的版本")
     (invoke-later 
      (do 
        (-> main-frame pack! show!)
-       (timer (fn [e] (repaint! main-panel)) :delay 500)
+       (timer ui-thread :delay 500)
        (future (sim/simulate scada-stop!))))))
 
 

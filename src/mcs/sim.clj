@@ -84,24 +84,26 @@
         m1 (dp/table2map @(:AI dp/data-point-tables))
         m2 (dp/table2map @(:DI dp/data-point-tables))
         mi (merge m1 m2)
-        d3 (util/map-key-by-map d2 mi)
-        ctx1 @simulation-context
-        ctx2 (push-blocks ctx1 d3)
-        ctx3 (execute-blocks ctx2 @bs/blocks)
-        d4 (first (:blocks-value ctx3))
-        m3 (dp/table2map @(:AO dp/data-point-tables))
-        m4 (dp/table2map @(:DO dp/data-point-tables))
-        mo (util/swap-key-value (merge m3 m4))
-        d5 (util/map-key-by-map d4 mo)
-        d6 (util/map-key-from-string-to-keyword d5)
-        ]
-    (do
-      (reset! simulation-context ctx3)
-      (if (controller-working?)
-        (do
-          (db/write! (merge d1 d6)))))))
+        d3 (util/map-key-by-map d2 mi)]
+    (if (< (count d3) (count mi))
+      (do 
+        (println "can't get AI/DI from database!")
+        false)
+      (let [ctx1 @simulation-context
+            ctx2 (push-blocks ctx1 d3)
+            ctx3 (execute-blocks ctx2 @bs/blocks)
+            d4 (first (:blocks-value ctx3))
+            m3 (dp/table2map @(:AO dp/data-point-tables))
+            m4 (dp/table2map @(:DO dp/data-point-tables))
+            mo (util/swap-key-value (merge m3 m4))
+            d5 (util/map-key-by-map d4 mo)
+            d6 (util/map-key-from-string-to-keyword d5)]
+        (reset! simulation-context ctx3)
+        (if (controller-working?)
+          (db/write! (merge d1 d6)))
+        true))))
 
-(defn simulate [f-exception]
+(defn simulate [exception-handler]
   (try 
     (while true
       (if (simulation-running?)
@@ -112,14 +114,17 @@
           (if (> tc t0)
             (let [dt (* (inc (int (/ (- tc t0) interval))) interval)
                   t1 (+ t0 dt)]
-              (do
-                (one-step)
-                (swap! simulation-context #(assoc % :schedule-time t1))
-                (Thread/sleep 50)))
+              (if (one-step)
+                (do
+                  (swap! simulation-context #(assoc % :schedule-time t1))
+                  (Thread/sleep 50))
+                (do
+                  (simulation-turn-off!)
+                  (Thread/sleep 250))))
             (Thread/sleep 50)))
         (Thread/sleep 250)))
     (catch Exception e (do
                          (.printStackTrace e)
-                         (f-exception nil)))))
+                         (exception-handler nil)))))
 
 
