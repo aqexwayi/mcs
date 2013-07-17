@@ -564,9 +564,10 @@
 (defn scada-stop! [e]
   (if (sim/simulation-running?)
     (do
-      (db/disconnect!)
-      (sim/simulation-turn-off!))
-    ))
+      (sim/simulation-turn-off!)
+      (alert main-frame "系统仿真停止")
+      (db/disconnect!))
+      ))
 
 (defn sort-blocks-by-id! [e]
   (swap! bs/blocks #(into [] (bs/sort-by-id %)))
