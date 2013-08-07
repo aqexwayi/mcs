@@ -66,7 +66,7 @@
 (defn write-data-with-time! [date data]
   (let [d (merge {:_id date} data)]
     (do
-      (println "WRITE:" d)
+      ;; (println "WRITE:" d)
       (monger.collection/insert "DATAOUT" d))))
 
 (defn write! [data]

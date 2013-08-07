@@ -290,3 +290,8 @@
             (reset! blocks bs4)
             true)))))
 
+(defn get-block-ids [block]
+  (let [bc (bc/block-class-from-type-name (:block-type block))
+        bid0 (Integer/parseInt (:block-id block))
+        n (count (:outputs bc))]
+    (map str (range bid0 (+ bid0 n)))))

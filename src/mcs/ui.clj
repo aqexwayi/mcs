@@ -3,6 +3,7 @@
   (:require [mcs.blocks :as bs])
   (:require [mcs.db :as db])
   (:require [mcs.dp :as dp])
+  (:require [mcs.check :as check])
   (:require [mcs.sim :as sim])
   (:require [mcs.util :as util])
   (:require [mcs.mac :as mac])
@@ -554,12 +555,15 @@
     (alert main-frame "组态系统已经在运行！")
     (if (empty? @bs/blocks)
       (alert main-frame "组态工程为空！")
-      (if-let [nc (scada-config-dlg)]
-        (do
-          (reset! scada-config nc)
-          (if (db/connect! @scada-config)
-            (sim/simulation-turn-on! nc)
-            (alert main-frame "无法连接数据库")))))))
+      (let [r (check/check @bs/blocks)]
+        (if (empty? r)
+          (if-let [nc (scada-config-dlg)]
+            (do
+              (reset! scada-config nc)
+              (if (db/connect! @scada-config)
+                (sim/simulation-turn-on! nc)
+                (alert main-frame "无法连接数据库"))))
+          (alert main-frame (str (ffirst r) (nfirst r))))))))
 
 (defn scada-stop! [e]
   (if (sim/simulation-running?)

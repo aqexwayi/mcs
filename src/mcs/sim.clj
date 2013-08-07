@@ -4,6 +4,7 @@
   (:require [mcs.dp :as dp])
   (:require [mcs.blocks :as bs])
   (:require [mcs.blockclass :as bc])
+  (:require [mcs.check :as check])
   (:import [java.util.concurrent Executors TimeUnit])
   (:import [java.util Date]))
 
