@@ -7,6 +7,8 @@
   (:import [java.util.concurrent Executors TimeUnit])
   (:import [java.util Date]))
 
+(def ^:dynamic *debug-level* 0)
+
 (def simulation-context
   (atom {:interval 1.0
          :clock 0
@@ -97,32 +99,37 @@
             m4 (dp/table2map @(:DO dp/data-point-tables))
             mo (util/swap-key-value (merge m3 m4))
             d5 (util/map-key-by-map d4 mo)
-            d6 (util/map-key-from-string-to-keyword d5)]
+            d6 (util/map-key-from-string-to-keyword d5)
+            ]
         (reset! simulation-context ctx3)
         (if (controller-working?)
-          (db/write! (merge d1 d6)))
+          (let [t0 (Date.)]
+            (db/write-data-with-time! t0 (merge d1 d6))
+            (if (> *debug-level* 0)
+              (db/write-debug-info-with-time! t0 d4))))
         true))))
 
 (defn simulate [exception-handler]
-  (try 
-    (while true
-      (if (simulation-running?)
-        (let [ctx @simulation-context
-              tc (System/currentTimeMillis)
-              t0 (:schedule-time ctx)
-              interval (int (* (:interval ctx) 1000))]
-          (if (> tc t0)
-            (let [dt (* (inc (int (/ (- tc t0) interval))) interval)
-                  t1 (+ t0 dt)]
-              (if (one-step)
-                (do
-                  (swap! simulation-context #(assoc % :schedule-time t1))
-                  (Thread/sleep 50))
-                (do
-                  (simulation-turn-off!)
-                  (Thread/sleep 250))))
-            (Thread/sleep 50)))
-        (Thread/sleep 250)))
+  (try
+    (binding [*debug-level* 1]
+      (while true
+        (if (simulation-running?)
+          (let [ctx @simulation-context
+                tc (System/currentTimeMillis)
+                t0 (:schedule-time ctx)
+                interval (int (* (:interval ctx) 1000))]
+            (if (> tc t0)
+              (let [dt (* (inc (int (/ (- tc t0) interval))) interval)
+                    t1 (+ t0 dt)]
+                (if (one-step)
+                  (do
+                    (swap! simulation-context #(assoc % :schedule-time t1))
+                    (Thread/sleep 50))
+                  (do
+                    (simulation-turn-off!)
+                    (Thread/sleep 250))))
+              (Thread/sleep 50)))
+          (Thread/sleep 250))))
     (catch Exception e (do
                          (.printStackTrace e)
                          (exception-handler nil)))))

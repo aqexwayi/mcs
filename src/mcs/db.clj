@@ -63,9 +63,15 @@
                        (interpolate-by-time [d1-t v1] [d2-t v2] t))
                      d1-v d2-v))
 
-(defn write! [data]
-  (let [d (merge {:_id (Date.)} data)]
+(defn write-data-with-time! [date data]
+  (let [d (merge {:_id date} data)]
     (do
       (println "WRITE:" d)
       (monger.collection/insert "DATAOUT" d))))
 
+(defn write! [data]
+  (write-data-with-time! (Date.) data))
+
+(defn write-debug-info-with-time! [date data]
+  (let [d (merge {:_id date} data)]
+    (monger.collection/insert "DEBUGINFO" d)))
