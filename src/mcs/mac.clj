@@ -1,4 +1,5 @@
 (ns mcs.mac
+  (:require [mcs.util :as util])
   (:import [java.net InetAddress NetworkInterface]))
 
 (def valid-mac-address-list
@@ -22,11 +23,7 @@
         "3C-97-0E-75-6D-54"
         ))
 
-(comment
-  (defn valid-mac-address? [] 
-    true))
-
-(defn valid-mac-address? []
+(defn -valid-mac-address? []
   (let [ia (InetAddress/getLocalHost)
         ni (NetworkInterface/getByInetAddress ia)
         mac (.getHardwareAddress ni)
@@ -35,3 +32,8 @@
         ]
     (some #{macstr} valid-mac-address-list)))
 
+(defn valid-mac-address? []
+  (if (util/is-os-windows?)
+    (-valid-mac-address?)
+    true
+    ))

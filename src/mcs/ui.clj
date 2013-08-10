@@ -596,7 +596,7 @@
    (dialog :content (vertical-panel 
                      :items ["MCS组态编辑仿真软件"
                              "@北京华电万通科技有限公司"
-                             "版本：0.5"
+                             "版本：0.6"
                              "2013 HDWT"]
                      )
            :type :info)

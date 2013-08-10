@@ -62,3 +62,7 @@
   (if (= (class v) java.lang.Double)
     (format "%.6f" v)
     (str v)))
+
+(defn is-os-windows? []
+  (let [os-name (System/getProperty "os.name")]
+    (.startsWith os-name "Windows")))

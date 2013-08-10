@@ -871,13 +871,23 @@
                             l (get-block-input-value ctx block "L")]
                         [(+ (* v (- h l)) l)])))}
    {:type-name "心跳信号"
-    :inputs [ {:name "TICK" :desc "周期" :type :real :default 1 }
+    :inputs [ {:name "T" :desc "周期" :type :real :default 1.0 }
               ]
     :outputs [:bool]
     :function (fn [ctx block]
-                (let [bid (:block-id block)
-                      b (get-current-block-value ctx bid 1)]
-                  (update-context ctx {bid (not b)})))
+                (let [bid (:block-id block)]
+                  (if (:running ctx)
+                    (let [interval (:interval ctx)
+                          t (get-block-input-value ctx block "T")
+                          tick (int (/ t interval))
+                          b (get-current-block-value ctx bid 1)
+                          st (or (get-block-state ctx bid) 0)]
+                      (if (or (zero? st) (zero? tick))
+                        (let [ctx2 (set-block-state ctx bid tick)]
+                          (update-context ctx2 {bid (not b)}))
+                        (let [ctx2 (set-block-state ctx bid (dec st))]
+                          (update-context ctx2 {bid b}))))
+                    (update-context ctx {bid false}))))
     }
    ])
 
