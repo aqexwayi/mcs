@@ -82,7 +82,9 @@
       ctx4)))
 
 (defn one-step []
-  (let [d1 (db/read!)
+  (let [t0 (System/currentTimeMillis)
+        d1 (db/read!)
+        t1 (System/currentTimeMillis)
         d2 (util/map-key-from-keyword-to-string d1)
         m1 (dp/table2map @(:AI dp/data-point-tables))
         m2 (dp/table2map @(:DI dp/data-point-tables))
@@ -104,10 +106,13 @@
             ]
         (reset! simulation-context ctx3)
         (if (controller-working?)
-          (let [t0 (Date.)]
-            (db/write-data-with-time! t0 (merge d1 d6))
+          (let [t2 (System/currentTimeMillis)
+                tw (Date.)]
+            (db/write-data-with-time! tw (merge d1 d6))
             (if (> *debug-level* 0)
-              (db/write-debug-info-with-time! t0 d4))))
+              (let [t3 (System/currentTimeMillis)]
+                (println "T0=" t0 "R=" (- t1 t0) " C=" (- t2 t1) " W=" (- t3 t2))
+                (db/write-debug-info-with-time! tw d4)))))
         true))))
 
 (defn simulate [exception-handler]
