@@ -111,7 +111,7 @@
             (db/write-data-with-time! tw (merge d1 d6))
             (if (> *debug-level* 0)
               (let [t3 (System/currentTimeMillis)]
-                (println "T0=" t0 "R=" (- t1 t0) " C=" (- t2 t1) " W=" (- t3 t2))
+                (comment (println "T0=" t0 "R=" (- t1 t0) " C=" (- t2 t1) " W=" (- t3 t2)))
                 (db/write-debug-info-with-time! tw d4)))))
         true))))
 

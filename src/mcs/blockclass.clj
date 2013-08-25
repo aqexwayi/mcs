@@ -872,11 +872,13 @@
                         [(+ (* v (- h l)) l)])))}
    {:type-name "心跳信号"
     :inputs [ {:name "T" :desc "周期" :type :real :default 1.0 }
+              {:name "EN" :desc "有效" :type :bool :default true}
               ]
     :outputs [:bool]
     :function (fn [ctx block]
-                (let [bid (:block-id block)]
-                  (if (:running ctx)
+                (let [bid (:block-id block)
+                      en (get-block-input-value ctx block "EN")]
+                  (if (and en (:running ctx))
                     (let [interval (:interval ctx)
                           t (get-block-input-value ctx block "T")
                           tick (int (/ t interval))
