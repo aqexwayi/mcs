@@ -881,13 +881,14 @@
                   (if (and en (:running ctx))
                     (let [interval (:interval ctx)
                           t (get-block-input-value ctx block "T")
-                          tick (int (/ t interval))
+                          tick (int (+ (/ t interval) 0.5))
                           b (get-current-block-value ctx bid 1)
-                          st (or (get-block-state ctx bid) 0)]
-                      (if (or (zero? st) (zero? tick))
+                          st (or (get-block-state ctx bid) 0)
+                          new-st (dec st)]
+                      (if (or (<= new-st 0) (zero? tick))
                         (let [ctx2 (set-block-state ctx bid tick)]
                           (update-context ctx2 {bid (not b)}))
-                        (let [ctx2 (set-block-state ctx bid (dec st))]
+                        (let [ctx2 (set-block-state ctx bid new-st)]
                           (update-context ctx2 {bid b}))))
                     (update-context ctx {bid false}))))
     }
