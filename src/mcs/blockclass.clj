@@ -303,11 +303,13 @@
     (let [err (if dir (- pv sp) (- sp pv))]
      (if Ts
        (let [tr (util/limit-value Tr Cl Ch)
-             _ (println "tr=" tr ",ff=" ff)
+             integ (/ (- tr ff (* Kp err)) Kp)
              ctx2 (set-block-state ctx bid {"ERR" err
-                                            "I" (/ (- tr ff (* Kp err)) Kp)
+                                            "I" integ 
                                             "D" 0.0
-                                            "OUTPUT" tr})]
+                                            "OUTPUT" tr})
+             ;; _ (println "tr=" tr ",ff=" ff "err=" err "integ=" integ)
+             ]
          (update-context ctx2 {bid Tr 
                                bid1 (>= Tr Ch)
                                bid2 (<= Tr Cl)}))
