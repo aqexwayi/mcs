@@ -529,7 +529,7 @@
                             :text (:name @scada-config))
                (seesaw.forms/next-line)
                "仿真周期" (combobox :id :simulation-interval
-                                    :model [250 500 1000]) "ms"]]
+                                    :model [1000 500 250]) "ms"]]
     (->
      (dialog :id :scada-config-dlg
              :title "SCADA数据总线配置"

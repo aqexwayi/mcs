@@ -6,6 +6,7 @@
                  [seesaw "1.4.3"]
                  [net.sf.jgrapht/jgrapht "0.8.3"]
                  [com.novemberain/monger "1.4.2"]
+                 [clatrix "0.3.0"]
                  ]
   :omit-source true
   :main mcs.ui

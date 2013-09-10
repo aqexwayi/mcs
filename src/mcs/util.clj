@@ -58,6 +58,10 @@
         (+ v e)
         (- v e)))))
 
+(defn dot-product [X1 X2]
+  (let [X_ (map * X1 X2)]
+    (reduce + X_)))
+
 (defn format-value [v]
   (if (= (class v) java.lang.Double)
     (format "%.6f" v)

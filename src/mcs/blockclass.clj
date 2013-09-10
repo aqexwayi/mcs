@@ -1,7 +1,8 @@
 (ns mcs.blockclass
   (:require [mcs.util :as util])
   (:require [mcs.rk4 :as rk4])
-  (:require [mcs.tf :as tf]))
+  (:require [mcs.tf :as tf])
+  (:require [mcs.lm :as lm]))
 
 (declare block-classes)
 (defn get-block-parameter [block name]
@@ -247,17 +248,22 @@
         ]
     (update-context ctx2 {bid v})))
 
-(defn transfer-function [ctx block]
-  (let [bid (:block-id block)
-        num (get-block-input-value ctx block "NUM")
-        den (get-block-input-value ctx block "DEN")
-        n (dec (count den))
+(defn parse-num-den [num den]
+  (let [n (dec (count den))
         num+ (reverse (take (inc n) (concat (reverse num) (repeat 0))))
         f #(/ % (double (first den)))
         b (map f num+) 
         a (map f den)  ;; a0 == 1.0
+        ]
+    [b a n]))
+
+(defn transfer-function [ctx block]
+  (let [bid (:block-id block)
+        num (get-block-input-value ctx block "NUM")
+        den (get-block-input-value ctx block "DEN")
+        [b a n] (parse-num-den num den)
         M (or (get-block-state ctx bid)
-              {:X nil :Y 0.0 :num b :den a})
+              {:X (repeat n 0.0) :Y 0.0 :num b :den a})
         dt (:interval ctx)
         u (get-block-input-value ctx block "AI")
         M+ (tf/step M u dt)
@@ -347,6 +353,69 @@
          (update-context ctx2 {bid u3
                                bid1 (or BI (>= u3 Ch)) 
                                bid2 (or BD (<= u3 Cl))}))))))
+
+(defn left-shift [v]
+  (vec (concat (rest v) (list (last v)))))
+
+(defn right-shift [v]
+  (vec (cons (first v) v)))
+
+(defn adjust-Y0 [v pv]
+  (let [e (- pv (first v))
+        _ (println "e=" e)]
+    (mapv + v (repeat e))))
+
+(defn compute-step-reponse [num den n dt l]
+  (let [M0 {:X (repeat n 0.0) :Y 0.0 :num num :den den}
+        f #(tf/step % 1.0 dt)]
+    (take l (rest (map #(get % :Y 0.0) (iterate f M0))))))
+
+(defn build-A [a N L]
+  (let [a+ (concat (repeat (dec L) 0.0) a)
+        alist (take N (iterate rest a+)) ]
+    (mapv #(vec (reverse (take L %))) alist)))
+
+(defn dmc [ctx block]
+  (let [dt (:interval ctx)
+        bid (:block-id block)
+        L (get-block-input-value ctx block "L")
+        N (get-block-input-value ctx block "N")
+        lamda (get-block-input-value ctx block "LAMDA")
+        q (get-block-input-value ctx block "Q") 
+        delta (get-block-input-value ctx block "DELTA")
+        tau (int (get-block-input-value ctx block "TAU"))
+        sp (get-block-input-value ctx block "SP")
+        pv (get-block-input-value ctx block "PV")
+        num (get-block-input-value ctx block "NUM")
+        den (get-block-input-value ctx block "DEN")
+        [num+ den+ n] (parse-num-den num den)
+        sr0 (compute-step-reponse num+ den+ n dt N)
+        sr (take N (vec (concat (repeat tau 0.0) sr0)))
+        st (get-block-state ctx bid)
+        Y0 (get st :Y0 (repeat N pv))
+        dU (get st :dU (repeat L 0.0))
+        Y0+ (adjust-Y0 Y0 pv)
+        A (build-A sr N L)
+        f (fn [du a y0]
+            (+ (util/dot-product a du) y0 (- sp)))  
+        df (fn [du a y0] 
+             a) 
+        dU-new (lm/solve A
+                         Y0+
+                         {:max-iter-count 10 :lamda lamda :delta delta}
+                         (left-shift dU)
+                         f
+                         df)
+        du0 (first dU-new)
+        Y0-new (mapv + (left-shift Y0+) (mapv * (repeat N du0) sr))
+        ctx2 (set-block-state ctx bid {:Y0 Y0-new 
+                                       :dU dU-new})
+        u (get-current-block-value ctx bid 1)
+        v (+ u du0)
+        _ (println "dU0=   " du0)
+        _ (println "Y0-new=" (take 5 Y0-new))
+        ]
+    (update-context ctx2 {bid v})))
 
 (defn output-value-parameter [ctx block]
   [(get-block-input-value ctx block "VALUE")])
@@ -562,7 +631,7 @@
                       k3 (get-block-input-value ctx block "K3")
                       k4 (get-block-input-value ctx block "K4")
                       k (get-block-input-value ctx block "K")
-                      v (* k (+ (* k1 ai1) (* k2 ai2) (* k3 ai3) (* k4 ai4)))]
+                      v (double (* k (+ (* k1 ai1) (* k2 ai2) (* k3 ai3) (* k4 ai4))))]
                   (update-context ctx {(:block-id block) v})))
     }
    {:type-name "乘法器"
@@ -577,7 +646,7 @@
                 (let [ai1 (get-block-input-value ctx block "AI1")
                       ai2 (get-block-input-value ctx block "AI2")
                       k (get-block-input-value ctx block "K")
-                      v (* k ai1 ai2)]
+                      v (double (* k ai1 ai2))]
                   (update-context ctx {(:block-id block) v})))
     }
    {:type-name "除法器"
@@ -595,7 +664,8 @@
                       bid (:block-id block)]
                   (if (util/almost-zero? ai2)
                     (keep-block-value ctx bid)
-                    (update-context ctx {bid (* k (/ ai1 ai2))}))))
+                    (let [v (double (* k (/ ai1 ai2)))]
+                      (update-context ctx {bid v})))))
     }
    {:type-name "输入AND"
     :inputs [ {:name "DI1" :desc "DI1" :type :bool :default true 
@@ -858,7 +928,8 @@
    {:type-name "传递函数"
     :inputs [ {:name "AI" :desc "AI" :type :real :default 0.0}
               {:name "NUM" :desc "NUM" :type :vector :default [0.1]}
-              {:name "DEN" :desc "DEN" :type :vector :default [1.0 0.1]}]
+              {:name "DEN" :desc "DEN" :type :vector :default [1.0 0.1]}
+              ]
     :outputs [:real]
     :function transfer-function
     }
@@ -894,6 +965,22 @@
                           (update-context ctx2 {bid b}))))
                     (update-context ctx {bid false}))))
     }
+   {:type-name "单路预测控制"
+    :inputs [{:name "PV" :desc "被调量" :type :real :default 0.0
+              :link true :link-block-id 0}
+             {:name "SP" :desc "设定值" :type :real :default 0.0 
+              }
+             {:name "NUM" :desc "NUM" :type :vector :default [1.0]}
+             {:name "DEN" :desc "DEN" :type :vector :default [10.0 1.0]}
+             {:name "LAMDA" :desc "正定系数" :type :real :default 0.01}
+             {:name "L" :desc "控制长度" :type :real :default 60}
+             {:name "N" :desc "预测长度" :type :real :default 120}
+             {:name "Q" :desc "柔化系数" :type :real :default 1.0}
+             {:name "DELTA" :desc "惩罚系数" :type :real :default 0.1}
+             {:name "TAU" :desc "纯延迟" :type :real :default 0.0}
+             ]
+    :outputs [:real]
+    :function dmc}
    ])
 
 

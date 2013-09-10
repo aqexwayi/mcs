@@ -22,7 +22,7 @@
   (map #(% X) F))
 
 (defn rk4V [dXdt dt X]
-  (let [X1 (or X (take (count dXdt) (repeat 0.0)))
+  (let [X1 (or X (repeat (count dXdt) 0.0))
         D1 (applyV dXdt X1)
         X2 (addV X1 (mulSV (/ dt 2.0) D1))
         D2 (applyV dXdt X2)
