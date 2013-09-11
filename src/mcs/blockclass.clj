@@ -92,7 +92,14 @@
   (if-let [para (get-block-parameter block name)]
     (if (get para :link)
       (get-block-value ctx (:link-block-id para) 0)
-      (get para :value))))
+      (if-let [v (get para :value)]
+        v
+        (get para :default)))
+    (let [bc (block-class-from-type-name (:block-type block))
+          paras (get bc :inputs)
+          para (find-parameter-by-name paras name)
+          default-v (get para :default)]
+      default-v)))
 
 (defn get-block-input-link [ctx block name]
   (if-let [para (get-block-parameter block name)]
@@ -360,10 +367,9 @@
 (defn right-shift [v]
   (vec (cons (first v) v)))
 
-(defn adjust-Y0 [v pv]
-  (let [e (- pv (first v))
-        _ (println "e=" e)]
-    (mapv + v (repeat e))))
+(defn adjust-Y0 [v pv correction-factor]
+  (let [e (- pv (first v))]
+    (mapv + v (repeat (* correction-factor e)))))
 
 (defn compute-step-reponse [num den n dt l]
   (let [M0 {:X (repeat n 0.0) :Y 0.0 :num num :den den}
@@ -384,6 +390,7 @@
         q (get-block-input-value ctx block "Q") 
         delta (get-block-input-value ctx block "DELTA")
         tau (int (get-block-input-value ctx block "TAU"))
+        cf (get-block-input-value ctx block "CF")
         sp (get-block-input-value ctx block "SP")
         pv (get-block-input-value ctx block "PV")
         num (get-block-input-value ctx block "NUM")
@@ -394,7 +401,7 @@
         st (get-block-state ctx bid)
         Y0 (get st :Y0 (repeat N pv))
         dU (get st :dU (repeat L 0.0))
-        Y0+ (adjust-Y0 Y0 pv)
+        Y0+ (adjust-Y0 Y0 pv cf)
         A (build-A sr N L)
         f (fn [du a y0]
             (+ (util/dot-product a du) y0 (- sp)))  
@@ -978,6 +985,7 @@
              {:name "Q" :desc "柔化系数" :type :real :default 1.0}
              {:name "DELTA" :desc "惩罚系数" :type :real :default 0.1}
              {:name "TAU" :desc "纯延迟" :type :real :default 0.0}
+             {:name "CF" :desc "修正系数" :type :real :default 1.0}
              ]
     :outputs [:real]
     :function dmc}
