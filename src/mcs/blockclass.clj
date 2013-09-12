@@ -316,7 +316,7 @@
     (let [err (if dir (- pv sp) (- sp pv))]
      (if Ts
        (let [tr (util/limit-value Tr Cl Ch)
-             integ (/ (- tr ff (* Kp err)) Kp)
+             integ (/ (- tr (* Kf ff) (* Kp err)) Kp)
              ctx2 (set-block-state ctx bid {"ERR" err
                                             "I" integ 
                                             "D" 0.0
