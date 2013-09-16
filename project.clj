@@ -1,4 +1,4 @@
-(defproject mcs "0.6.5"
+(defproject mcs "0.6.6"
   :description "micro-block control system"
   :url "http://micro-block-control-system.com/"
   :dependencies [[org.clojure/clojure "1.5.1"]
@@ -7,6 +7,7 @@
                  [net.sf.jgrapht/jgrapht "0.8.3"]
                  [com.novemberain/monger "1.4.2"]
                  [clatrix "0.3.0"]
+                 [rhizome "0.1.9"]
                  ]
   :omit-source true
   :main mcs.ui

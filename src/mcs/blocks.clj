@@ -67,6 +67,11 @@
             (map #(bc/find-block-by-id % bs) result))))
       )))
 
+(defn build-graph [bs]
+  (into {} 
+        (for [b bs] 
+          [(:block-id b) (mapv :block-id (blocks-before b bs))])))
+
 (defn get-available-block-id [bs]
   (if (empty? bs)
     "1000"

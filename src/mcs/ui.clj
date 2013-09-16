@@ -8,8 +8,10 @@
   (:require [mcs.util :as util])
   (:require [mcs.mac :as mac])
   (:use [seesaw core])
+  (:use [rhizome dot])
   (:require [seesaw action font table border forms mouse])
   (:require [clojure.java.io])
+  (:require [clojure.java.shell])
   (:import [java.io File])
   (:import [java.awt Color Dimension])
   (:import [javax.swing JComponent UIManager JFileChooser])
@@ -604,6 +606,24 @@
    center-dialog!
    show!))
 
+(defn- output-svg [g fname]
+  (let [f (fn [bid] 
+            {:label (str bid "\n" (:block-desc (bc/find-block-by-id bid @bs/blocks))) 
+             :shape :box})
+        dot (graph->dot (keys g) g :node->descriptor f)
+        ]
+    (do
+      (spit "tmp.dot" dot)
+      (clojure.java.shell/sh "dot" "-Tsvg:cairo" (str "-o" fname) "tmp.dot"))))
+
+(defn export-svg! [e]
+  (if-let [f (mcs-choose-file :save)]
+    (let [fname (.getPath f)
+          g (bs/build-graph @bs/blocks)]
+      (if (.endsWith fname ".svg")
+        (output-svg g fname)
+        (output-svg g (str fname ".svg"))))))
+
 (def menu-items
   [(menu
     :text "文件  "
@@ -613,6 +633,9 @@
                                   :handler load-project!)
             (seesaw.action/action :name "保存工程"
                                   :handler save-project!)
+            :separator
+            (seesaw.action/action :name "export svg"
+                                  :handler export-svg!)
             :separator
             (seesaw.action/action :name "退出软件"
                                   :handler (fn [e]
