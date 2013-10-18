@@ -214,7 +214,7 @@
   (let [x0 (.getX pt2d)
         y0 (.getY pt2d)
         lbs @link-blocks]
-    (str (last (first (filter #(point-in-rect? [x0 y0] %) lbs))))))
+    (last (first (filter #(point-in-rect? [x0 y0] %) lbs)))))
 
 (defn draw-link-block [g x y idx]
   (add-link-block x (- y 12) 100 24 idx)
@@ -293,11 +293,12 @@
         :mouse-clicked
         (fn [e]
           (if (= 2 (.getClickCount e))
-            (if-let [lb (find-link-block-id (.getPoint e))]
-              (let [table (select main-panel [:#block-table])
-                    r (util/first-index-of #(= (str lb) (:block-id %))
+            (if-let [lbid (find-link-block-id (.getPoint e))]
+              (let [lbid-str (str lbid) 
+                    table (select main-panel [:#block-table])
+                    r (util/first-index-of #(= lbid-str (:block-id %))
                                            @bs/blocks)]
-                (bs/select-current-block lb)
+                (bs/select-current-block lbid-str)
                 (selection! table r)
                 (repaint! main-panel))))))
 
