@@ -12,9 +12,9 @@
   (try
     (do
       (monger.core/connect! db-config)
-      (monger.core/set-db! (monger.core/get-db (:name db-config)))
+      (monger.core/use-db! (:db-name db-config))
       true)
-    (catch Exception _ false)))
+    (catch Exception e false)))
 
 (defn disconnect! []
   (monger.core/disconnect!))

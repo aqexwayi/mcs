@@ -6,23 +6,14 @@
   (:require [mcs.blockclass :as bc])
   (:require [mcs.check :as check])
   (:import [java.util.concurrent Executors TimeUnit])
-  (:import [java.util Date]))
+  (:import [java.util Date])
+  (:import [java.io IOException]))
 
 (def ^:dynamic *debug-level* 0)
 
 (def simulation-context
-  (atom {:interval 1.0
-         :clock 0
-         :running false
-         :buffer-length 300
-         :blocks {}
-         :blocks-value ()
-         :blocks-state {}
-         :ai []
-         :di []
-         :timers {}
-         :schedule-time 0
-         }))
+  (atom {:running false
+         :db-connected? false}))
 
 (defn get-current-block-value [block-id]
   (let [bv (first (get @simulation-context :blocks-value))]
@@ -37,20 +28,20 @@
 (defn simulation-turn-on! [cfg]
   (let [ai (map second @(:AI dp/data-point-tables))
         di (map second @(:DI dp/data-point-tables))
-        interval (:interval cfg)
+        sc {:running true
+            :clock 0
+            :buffer-length 500
+            :blocks @bs/blocks
+            :blocks-value ()
+            :blocks-state {}
+            :ai ai
+            :di di
+            :timers {}
+            :schedule-time (System/currentTimeMillis)
+            }
+        sc-new (merge sc cfg)
         ]
-    (swap! simulation-context #(assoc % 
-                                 :running true
-                                 :interval interval
-                                 :clock 0
-                                 :blocks-value ()
-                                 :blocks-state {}
-                                 :blocks @bs/blocks
-                                 :ai ai
-                                 :di di
-                                 :timers {}
-                                 :schedule-time (System/currentTimeMillis)
-                                 ))))
+    (reset! simulation-context sc-new)))
 
 (defn simulation-turn-off! []
   (swap! simulation-context #(assoc % :running false)))
@@ -111,7 +102,6 @@
             (db/write-data-with-time! tw (merge d1 d6))
             (if (> *debug-level* 0)
               (let [t3 (System/currentTimeMillis)]
-                (comment (println "T0=" t0 "R=" (- t1 t0) " C=" (- t2 t1) " W=" (- t3 t2)))
                 (db/write-debug-info-with-time! tw d4)))))
         true))))
 
@@ -120,22 +110,33 @@
     (binding [*debug-level* 1]
       (while true
         (if (simulation-running?)
-          (let [ctx @simulation-context
-                tc (System/currentTimeMillis)
-                t0 (:schedule-time ctx)
-                interval (int (* (:interval ctx) 1000))]
-            (if (> tc t0)
-              (let [dt (* (inc (int (/ (- tc t0) interval))) interval)
-                    t1 (+ t0 dt)]
-                (if (one-step)
-                  (do
-                    (swap! simulation-context #(assoc % :schedule-time t1))
-                    (Thread/sleep 50))
-                  (do
-                    (simulation-turn-off!)
-                    (Thread/sleep 250))))
-              (Thread/sleep 50)))
-          (Thread/sleep 250))))
+          (do
+            (if (:db-connected? @simulation-context)
+              (let [ctx @simulation-context
+                    tc (System/currentTimeMillis)
+                    t0 (:schedule-time ctx)
+                    interval (int (* (:interval ctx) 1000))]
+                (if (> tc t0)
+                  (let [dt (* (inc (int (/ (- tc t0) interval))) interval)
+                        t1 (+ t0 dt)]
+                    (if (one-step)
+                      (do
+                        (swap! simulation-context #(assoc % :schedule-time t1))
+                        (Thread/sleep 50))
+                      (do
+                        (simulation-turn-off!)
+                        (Thread/sleep 250))))
+                  (Thread/sleep 50)))
+              (if (db/connect! @simulation-context)
+                (swap! simulation-context #(assoc % :db-connected? true))
+                (do 
+                  (simulation-turn-off!)))))
+          (do
+            (if (:db-connected? @simulation-context)
+              (do
+                (swap! simulation-context #(assoc % :db-connected? false))
+                (db/disconnect!)))
+            (Thread/sleep 250)))))
     (catch Exception e (do
                          (.printStackTrace e)
                          (exception-handler nil)))))

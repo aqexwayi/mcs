@@ -26,6 +26,7 @@
         "9C-4E-36-18-D3-28"
         "00-2C-CC-CA-FC-BD"
         "00-0B-AB-74-FA-90"
+        "00-05-5D-0F-40-E0" ;; DFE530Tx
         ))
 
 (defn -valid-mac-address? []

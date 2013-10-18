@@ -23,7 +23,7 @@
 
 (def scada-config (atom {:host "localhost"
                          :port 27017
-                         :name "scada"}))
+                         :db-name "scada"}))
 
 (native!) ;; must call it very early 
 
@@ -36,7 +36,7 @@
 
 (def main-panel)
 (def main-frame)
-(def main-frame-title "华电万通MCS功能块编辑器")
+(def main-frame-title "华电万通组态软件")
 
 (defn center-component! 
   "This centers any component.
@@ -528,7 +528,7 @@
                             :text (str (:port @scada-config)))
                (seesaw.forms/next-line)
                "数据库名" (text :id :scada-config-name
-                            :text (:name @scada-config))
+                            :text (:db-name @scada-config))
                (seesaw.forms/next-line)
                "仿真周期" (combobox :id :simulation-interval
                                     :model [1000 500 250]) "ms"]]
@@ -539,7 +539,7 @@
                            {:host (text (select (to-frame p) [:#scada-config-host]))
                             :port (Integer/parseInt (text (select (to-frame p) 
                                                                   [:#scada-config-port])))
-                            :name (text (select (to-frame p) [:#scada-config-name]))
+                            :db-name (text (select (to-frame p) [:#scada-config-name]))
                             :interval (let [s (selection (select (to-frame p)
                                                                  [:#simulation-interval]))] 
                                         (/ s 1000.0))
@@ -562,9 +562,7 @@
           (if-let [nc (scada-config-dlg)]
             (do
               (reset! scada-config nc)
-              (if (db/connect! @scada-config)
-                (sim/simulation-turn-on! nc)
-                (alert main-frame "无法连接数据库"))))
+              (sim/simulation-turn-on! nc)))
           (alert main-frame (str (ffirst r) (nfirst r))))))))
 
 (defn scada-stop! [e]
@@ -572,8 +570,7 @@
     (do
       (sim/simulation-turn-off!)
       (alert main-frame "系统仿真停止")
-      (db/disconnect!))
-      ))
+      )))
 
 (defn sort-blocks-by-id! [e]
   (swap! bs/blocks #(into [] (bs/sort-by-id %)))
@@ -596,7 +593,7 @@
 (defn show-about-dialog [e]
   (->
    (dialog :content (vertical-panel 
-                     :items ["MCS组态编辑仿真软件"
+                     :items ["组态仿真软件"
                              "@北京华电万通科技有限公司"
                              "版本：0.6"
                              "2013 HDWT"]
@@ -634,7 +631,7 @@
             (seesaw.action/action :name "保存工程"
                                   :handler save-project!)
             :separator
-            (seesaw.action/action :name "export svg"
+            (seesaw.action/action :name "导出SVG"
                                   :handler export-svg!)
             :separator
             (seesaw.action/action :name "退出软件"
@@ -677,7 +674,7 @@
 (defn ui-thread [e]
   (if (sim/simulation-running?)
     (let [c (sim/get-simulation-interval)
-          title (str main-frame-title " [ 运行 : 仿真周期 = " c "s ]")]
+          title (str main-frame-title " [ 运行 : 仿真周期=" c "s ]")]
       (config! main-frame :title title)
       (.setEnabled menu-item-scada-start false)
       (.setEnabled menu-item-scada-stop true))
