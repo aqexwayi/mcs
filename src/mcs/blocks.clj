@@ -189,12 +189,51 @@
         nps4 (expand-array-parameter nps3)]
     nps4))
 
+;;
+;; { name
+;;     [condition-f(para) 
+;;              [vaule-check-f(para pvalue) 
+;;               link-check-f(para plinkid)]]
+;;  ... }
+;;
+(def parameter-check-passes 
+  [;; check-boolean-value
+   [#(= :bool (:type %))
+    [(fn [p v] 
+       (let [uv (clojure.string/upper-case v)]
+         (or (= uv "TRUE") (= uv "FALSE"))))
+     (constantly true)
+     ]]
+   ;; check-double-value
+   [#(= :real (:type %))
+    [(fn [p v]
+       (Double/parseDouble v)
+       true)
+     (constantly true)]]
+   ;; check-array-size-value
+   [:used-as-array-size    
+    [(fn [p v] 
+       (<= 2 (Integer/parseInt v) 10))
+     (constantly false)]]
+   ;; check-value-range
+   [#(= :real (:type %))
+    [(fn [p v]
+       (let [min-v (get p :min-value (- Double/MAX_VALUE))
+             max-v (get p :max-value Double/MAX_VALUE)]
+         (<= min-v (Double/parseDouble v) max-v)))
+     (constantly true)]]
+   ])
+
 (defn valid-parameter-value? [para pvalue plink plinkid]
   (try
-    (if (:used-as-array-size para)
-      (<= 2 (Integer/parseInt pvalue) 10)
-      true)
-    (catch Exception _ false)))
+    (every? identity (map (fn [[fp [fv fl]]]
+                            (if (fp para)
+                              (if plink 
+                                (fl para plinkid)
+                                (fv para pvalue))
+                              true)) 
+                          parameter-check-passes))
+    (catch Exception e false)))
 
 ;; pvalue maybe "1.0" "false"
 (defn change-parameter-of-current-block! [para pvalue plink plinkid]

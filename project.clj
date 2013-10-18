@@ -1,4 +1,4 @@
-(defproject mcs "0.6.8"
+(defproject mcs "0.6.9"
   :description "micro-block control system"
   :url "http://micro-block-control-system.com/"
   :dependencies [[org.clojure/clojure "1.5.1"]
