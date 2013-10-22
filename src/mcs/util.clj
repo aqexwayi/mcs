@@ -1,4 +1,5 @@
-(ns mcs.util)
+(ns mcs.util
+  (:require [clojure.string]))
 
 (defn indices-of [f coll]
   (keep-indexed #(if (f %2) %1 nil) coll))
@@ -70,3 +71,8 @@
 (defn is-os-windows? []
   (let [os-name (System/getProperty "os.name")]
     (.startsWith os-name "Windows")))
+
+(defn trim+ [s]
+  (if (string? s)
+    (clojure.string/trim s)
+    s))

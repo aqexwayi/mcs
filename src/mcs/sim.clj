@@ -137,8 +137,9 @@
                 (swap! simulation-context #(assoc % :db-connected? false))
                 (db/disconnect!)))
             (Thread/sleep 250)))))
-    (catch Exception e (do
-                         (.printStackTrace e)
-                         (exception-handler nil)))))
+    (catch Exception e
+      (do
+        (.printStackTrace e)
+        (exception-handler nil)))))
 
 

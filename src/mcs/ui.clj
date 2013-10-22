@@ -188,7 +188,9 @@
       (let [para-name (.getValueAt table row 0)
             para (first (filter #(= para-name (:name %))
                                 (:inputs @bs/current-block)))
-            [pv pl plid] (input-parameter-dlg para)]
+            ret (input-parameter-dlg para)
+            [pv pl plid] (mapv util/trim+ ret)
+            ]
         (if (nil? pv)
           (alert main-frame "取消参数修改！")
           (if (bs/valid-parameter-value? para pv pl plid)
@@ -596,7 +598,7 @@
    (dialog :content (vertical-panel 
                      :items ["组态仿真软件"
                              "@北京华电万通科技有限公司"
-                             "版本：0.6"
+                             "版本：0.7"
                              "2013 HDWT"]
                      )
            :type :info)

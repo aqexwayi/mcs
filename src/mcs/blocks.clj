@@ -210,6 +210,11 @@
        (Double/parseDouble v)
        true)
      (constantly true)]]
+   ;; check-vector-value
+   [#(= :vector (:type %))
+    [(fn [p v]
+       (vector? (read-string v)))
+     (constantly true)]]
    ;; check-array-size-value
    [:used-as-array-size    
     [(fn [p v] 
@@ -233,7 +238,8 @@
                                 (fv para pvalue))
                               true)) 
                           parameter-check-passes))
-    (catch Exception e false)))
+    (catch Exception e 
+      false)))
 
 ;; pvalue maybe "1.0" "false"
 (defn change-parameter-of-current-block! [para pvalue plink plinkid]
