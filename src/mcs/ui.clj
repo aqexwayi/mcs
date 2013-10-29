@@ -175,8 +175,9 @@
                             (text (select (to-frame p) [:#link-block-id]))])
              :cancel-fn (fn [p] nil)
              :option-type :ok-cancel
-             :content (seesaw.forms/forms-panel "right:pref,10dlu,120dlu,10dlu,pref"
-                                                :items items))
+             :content (seesaw.forms/forms-panel 
+                       "right:pref,10dlu,120dlu,10dlu,pref"
+                       :items items))
      pack!
      center-dialog!
      show!)))
@@ -194,9 +195,15 @@
         (if (nil? pv)
           (alert main-frame "取消参数修改！")
           (if (bs/valid-parameter-value? para pv pl plid)
-            (do
-              (bs/change-parameter-of-current-block! para pv pl plid)
-              (repaint! main-panel))
+            (try
+              (if (and (sim/simulation-running?) 
+                       (not (get para :change-online false)))
+                (alert main-frame "不能在线修改参数！")
+                (do
+                  (bs/change-parameter-of-current-block! para pv pl plid)
+                  (repaint! main-panel)))
+              (catch Exception e 
+                (alert main-frame "不正确的参数！")))
             (alert main-frame "不正确的参数！")))))))
 
 (def link-blocks (atom []))

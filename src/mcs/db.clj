@@ -10,10 +10,9 @@
 
 (defn connect! [db-config]
   (try
-    (do
-      (monger.core/connect! db-config)
-      (monger.core/use-db! (:db-name db-config))
-      true)
+    (monger.core/connect! db-config)
+    (monger.core/use-db! (:db-name db-config))
+    true
     (catch Exception e false)))
 
 (defn disconnect! []

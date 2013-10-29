@@ -76,3 +76,11 @@
   (if (string? s)
     (clojure.string/trim s)
     s))
+
+(defn double-vector? [v]
+  (if (vector? v)
+    (try 
+      (dorun (map double v))
+      true
+      (catch Exception e false))
+    false))

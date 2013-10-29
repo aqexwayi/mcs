@@ -83,10 +83,7 @@
 
 (defn set-value-by-default-value [parameter]
   (let [dv (:default parameter)]
-    (assoc parameter
-      :value dv
-      :change-online true
-      )))
+    (assoc parameter :value dv)))
 
 (defn use-value-instead-of-link [parameter]
   (if (nil? (:link parameter))
@@ -213,7 +210,7 @@
    ;; check-vector-value
    [#(= :vector (:type %))
     [(fn [p v]
-       (vector? (read-string v)))
+       (util/double-vector? (read-string v)))
      (constantly true)]]
    ;; check-array-size-value
    [:used-as-array-size    
@@ -345,3 +342,10 @@
         bid0 (Integer/parseInt (:block-id block))
         n (count (:outputs bc))]
     (map str (range bid0 (+ bid0 n)))))
+
+(defn get-block-outputs-type [block]
+  (let [bc (bc/block-class-from-type-name (:block-type block))
+        os (:outputs bc)]
+    (zipmap (get-block-ids block) os)))
+
+
