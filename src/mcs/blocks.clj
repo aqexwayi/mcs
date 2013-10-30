@@ -201,12 +201,6 @@
          (or (= uv "TRUE") (= uv "FALSE"))))
      (constantly true)
      ]]
-   ;; check-double-value
-   [#(= :real (:type %))
-    [(fn [p v]
-       (Double/parseDouble v)
-       true)
-     (constantly true)]]
    ;; check-vector-value
    [#(= :vector (:type %))
     [(fn [p v]
@@ -217,11 +211,12 @@
     [(fn [p v] 
        (<= 2 (Integer/parseInt v) 10))
      (constantly false)]]
-   ;; check-value-range
+   ;; check-real-value-range
+   ;; if real value is not in valid format , throw exception.
    [#(= :real (:type %))
     [(fn [p v]
-       (let [min-v (get p :min-value (- Double/MAX_VALUE))
-             max-v (get p :max-value Double/MAX_VALUE)]
+       (let [min-v (get p :min-value -1e9)
+             max-v (get p :max-value 1e9)]
          (<= min-v (Double/parseDouble v) max-v)))
      (constantly true)]]
    ])
