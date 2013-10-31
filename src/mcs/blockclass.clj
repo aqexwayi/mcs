@@ -5,6 +5,7 @@
   (:require [mcs.lm :as lm]))
 
 (declare block-classes)
+
 (defn get-block-parameter [block name]
   (first (filter #(= (:name %) name) (:inputs block))))
 
@@ -497,10 +498,10 @@
                :link true :link-block-id "0" :change-online true}
               {:name "N" :desc "函数分段数" :type :integer
                :change-online false
-               :min-value 1 :max-value 10 :default 2 :used-as-array-size true}
+               :min-value 1 :max-value 10 :default 10 :used-as-array-size true}
               {:name "X" :desc "X" :type :array 
                :element-type :real :array-size "N"
-               :default 1000000.0 }
+               :default 1e6 }
               {:name "Y" :desc "Y" :type :array 
                :element-type :real :array-size "N"
                :default 0.0 }
@@ -510,27 +511,24 @@
     }
    {:type-name "模拟量设定"
     :inputs [{:name "VALUE" :desc "输出设定" :type :real 
-              :default 0.0 :change-online true}]
+              :default 0.0}]
     :outputs [:real]
     :function (wrap output-value-parameter)
     }
    {:type-name "开关量设定"
     :inputs [{:name "VALUE" :desc "输出设定" :type :bool 
-              :default false :change-online true}]
+              :default false}]
     :outputs [ :bool ]
     :function (wrap output-value-parameter)
     }
    {:type-name "超前滞后"
-    :inputs [ {:name "LEAD" :desc "超前时间" :type :real :default 0.0 
-               :change-online true}
-              {:name "LAG" :desc "滞后时间" :type :real :default 0.0 
-               :change-online true}
-              {:name "K" :desc "增益" :type :real :default 1.0 
-               :change-online true}
+    :inputs [ {:name "LEAD" :desc "超前时间" :type :real :default 0.0 }
+              {:name "LAG" :desc "滞后时间" :type :real :default 0.0 }
+              {:name "K" :desc "增益" :type :real :default 1.0 }
               {:name "RATE" :desc "输出限速" :type :real :default 1.0
                :link false :link-block-id "0" :change-online true}
               {:name "TS" :desc "跟踪标志" :type :bool :default false
-               :link false :link-block-id "0" :change-online true}
+               :link false :link-block-id "0" :change-online false}
               {:name "AI" :desc "AI" :type :real :default 0.0
                :link true :link-block-id "0" :change-online true}
               ]
@@ -552,7 +550,7 @@
               {:name "K" :desc "增益" :type :real :default 1.0 
                :change-online true}
               {:name "TS" :desc "跟踪标志" :type :bool :default false
-               :link true :link-block-id 0 :change-online true}
+               :link true :link-block-id 0 :change-online false}
               {:name "AI" :desc "AI" :type :real :default 0.0
                :link true :link-block-id "0" :change-online true}
               ]
@@ -571,8 +569,10 @@
     :function differential
     }
    {:type-name "速率限制"
-    :inputs [ {:name "UV" :desc "升速率" :type :real :default 100.0 }
-              {:name "DV" :desc "降速率" :type :real :default 100.0 }
+    :inputs [ {:name "UV" :desc "升速率" :type :real :default 100.0
+               :min-value 0.0 }
+              {:name "DV" :desc "降速率" :type :real :default 100.0
+               :min-value 0.0 }
               {:name "TS" :desc "跟踪标志" :type :bool :default false }
               {:name "AI" :desc "AI" :type :real :default 0.0
                :link true :link-block-id "0" :change-online true}
@@ -581,10 +581,12 @@
     :function (wrap limit-change-rate)
     }
    {:type-name "模拟量切换"
-    :inputs [ {:name "R21" :desc "IN2 TO IN1速率" :type :real :default 100.0 }
-              {:name "R12" :desc "IN1 TO IN2速率" :type :real :default 100.0 }
+    :inputs [ {:name "R21" :desc "IN2 TO IN1速率" :type :real :default 100.0
+               :min-value 0.0 }
+              {:name "R12" :desc "IN1 TO IN2速率" :type :real :default 100.0 
+               :min-value 0.0 }
               {:name "SW" :desc "切换开关" :type :bool :default 0
-               :link true :link-block-id 0 :change-online true}
+               :link true :link-block-id 0 :change-online false}
               {:name "AI1" :desc "AI1" :type :real :default 0.0
                :link true :link-block-id "0" :change-online true}
               {:name "AI2" :desc "AI2" :type :real :default 0.0
@@ -594,10 +596,8 @@
     :function ai-switch
     }
    {:type-name "高低限幅"
-    :inputs [ {:name "H" :desc "高限幅" :type :real :default 100.0 
-               :change-online true}
-              {:name "L" :desc "低限幅" :type :real :default -100.0 
-               :change-online true}
+    :inputs [ {:name "H" :desc "高限幅" :type :real :default 100.0}
+              {:name "L" :desc "低限幅" :type :real :default -100.0}
               {:name "AI" :desc "AI" :type :real :default 0.0
                :link true :link-block-id "0" :change-online true}
               ]
@@ -605,10 +605,8 @@
     :function (wrap hl-limit)
     }
    {:type-name "高低限幅报警"
-    :inputs [ {:name "H" :desc "高限幅" :type :real :default 100.0
-               :change-online true}
-              {:name "L" :desc "低限幅" :type :real :default -100.0 
-               :change-online true}
+    :inputs [ {:name "H" :desc "高限幅" :type :real :default 100.0}
+              {:name "L" :desc "低限幅" :type :real :default -100.0}
               {:name "AI" :desc "AI" :type :real :default 0.0
                :link true :link-block-id "0" :change-online true}
               ]
@@ -616,10 +614,8 @@
     :function (wrap hl-alarm)
     }
    {:type-name "偏差高低报警"
-    :inputs [ {:name "H" :desc "高限幅" :type :real :default 100.0 
-               :change-online true}
-              {:name "L" :desc "低限幅" :type :real :default -100.0
-               :change-online true}
+    :inputs [ {:name "H" :desc "高限幅" :type :real :default 100.0 }
+              {:name "L" :desc "低限幅" :type :real :default -100.0 }
               {:name "AI1" :desc "AI1" :type :real :default 0.0
                :link true :link-block-id "0" :change-online true}
               {:name "AI2" :desc "AI2" :type :real :default 0.0
@@ -629,16 +625,11 @@
     :function (wrap dev-alarm)
     }
    {:type-name "输入求和"
-    :inputs [ {:name "K1" :desc "系数1" :type :real :default 0.0
-               :change-online true}
-              {:name "K2" :desc "系数2" :type :real :default 0.0
-               :change-online true}
-              {:name "K3" :desc "系数3" :type :real :default 0.0
-               :change-online true}
-              {:name "K4" :desc "系数4" :type :real :default 0.0
-               :change-online true}
-              {:name "K" :desc "总系数" :type :real :default 1.0
-               :change-online true}
+    :inputs [ {:name "K1" :desc "系数1" :type :real :default 0.0}
+              {:name "K2" :desc "系数2" :type :real :default 0.0}
+              {:name "K3" :desc "系数3" :type :real :default 0.0}
+              {:name "K4" :desc "系数4" :type :real :default 0.0}
+              {:name "K" :desc "总系数" :type :real :default 1.0}
               {:name "AI1" :desc "AI1" :type :real :default 0.0
                :link true :link-block-id "0" :change-online true}
               {:name "AI2" :desc "AI2" :type :real :default 0.0
@@ -678,8 +669,7 @@
                   (update-context ctx {(:block-id block) v})))
     }
    {:type-name "除法器"
-    :inputs [ {:name "K" :desc "总系数" :type :real :default 1.0
-               :change-online true}
+    :inputs [ {:name "K" :desc "总系数" :type :real :default 1.0}
               {:name "AI1" :desc "AI1" :type :real :default 0.0 
                :link false :link-block-id "0" :change-online true}
               {:name "AI2" :desc "AI2" :type :real :default 0.0 
@@ -765,7 +755,7 @@
     }
    {:type-name "定宽脉冲"
     :inputs [ {:name "DT" :desc "延时时间" :type :real :default 10.0
-               :change-online true}
+               :min-value 0.0 :max-value 1000.0}
               {:name "DI" :desc "DI" :type :bool :default false
                :link true :link-block-id "0" :change-online true}
               ]
@@ -788,7 +778,8 @@
                     (update-context ctx {do1id last-v do2id (not last-v)}))))
     }
    {:type-name "延时通"
-    :inputs [ {:name "DT" :desc "延时时间" :type :real :default 10.0}
+    :inputs [ {:name "DT" :desc "延时时间" :type :real :default 10.0
+               :min-value 0.0 :max-value 1000.0}
               {:name "DI" :desc "DI" :type :bool :default false
                :link true :link-block-id "0" :change-online true}
               ]
@@ -813,7 +804,8 @@
                     ctx2)))
     }
    {:type-name "延时断"
-    :inputs [ {:name "DT" :desc "延时时间" :type :real :default 10.0}
+    :inputs [ {:name "DT" :desc "延时时间" :type :real :default 10.0
+               :min-value 0.0 :max-value 1000.0}
               {:name "DI" :desc "DI" :type :bool :default false
                :link true :link-block-id "0" :change-online true}
               ]
@@ -836,9 +828,9 @@
                     [true false] (schedule-timer ctx2 do1id offset :reset)
                     ctx2)))
     }
-   {:type-name "模拟量延迟"
-    :inputs [ {:name "DT" :desc "延时时间" :type :real :default 1.0
-               :change-online true}
+   {:type-name "模拟量迟延"
+    :inputs [ {:name "DT" :desc "迟延时间" :type :real :default 1.0
+               :min-value 0.0 :max-value 60.0}
               {:name "AI" :desc "AI" :type :real :default 0.0
                :link true :link-block-id "0" :change-online true}
               ]
@@ -852,59 +844,43 @@
                   (update-context ctx {(:block-id block) v})))
     }
    {:type-name "增强型PID"
-    :inputs [ {:name "PV" :desc "被调量" :type :real :default 0.0
-               :change-online true}
-              {:name "SP" :desc "设定值" :type :real :default 0.0 
-               :change-online true}
-              {:name "TR" :desc "被跟踪量" :type :real :default 0.0 
-               :change-online true}
-              {:name "TS" :desc "跟踪标志" :type :bool :default false
-               :change-online true}
+    :inputs [ {:name "PV" :desc "被调量" :type :real :default 0.0}
+              {:name "SP" :desc "设定值" :type :real :default 0.0}
+              {:name "TR" :desc "被跟踪量" :type :real :default 0.0}
+              {:name "TS" :desc "跟踪标志" :type :bool :default false}
               {:name "KP" :desc "比例增益" :type :real :default 5.0
-               :change-online true}
+               :min-value 0.0}
               {:name "TI" :desc "积分时间" :type :real :default 100.0
-               :change-online true}
+               :min-value 0.0}
               {:name "TD" :desc "微分时间" :type :real :default 0.0
-               :change-online true}
+               :min-value 0.0}
               {:name "KD" :desc "微分增益" :type :real :default 100.0
-               :change-online true}
-              {:name "FF" :desc "前馈" :type :real :default 0.0
-               :change-online true}
-              {:name "KF" :desc "前馈增益" :type :real :default 100.0
-               :change-online true}
-              {:name "EDB" :desc "偏差死区" :type :real :default 0.0
-               :change-online true}
-              {:name "DIR" :desc "正反作用" :type :bool :default false
-               :change-online true}
-              {:name "CH" :desc  "输出高限" :type :real :default 100.0
-               :change-online true}
-              {:name "CL" :desc  "输出低限" :type :real :default -100.0
-               :change-online true}
+               :min-value 0.0}
+              {:name "FF" :desc "前馈" :type :real :default 0.0}
+              {:name "KF" :desc "前馈增益" :type :real :default 1.0}
+              {:name "EDB" :desc "偏差死区" :type :real :default 0.0}
+              {:name "DIR" :desc "正反作用" :type :bool :default false}
+              {:name "CH" :desc  "输出高限" :type :real :default 100.0}
+              {:name "CL" :desc  "输出低限" :type :real :default 0.0}
               {:name "BI" :desc  "闭锁增" :type :bool :default false 
-               :link false :link-block-id 0 :change-online true}
+               :link false :link-block-id 0 :change-online false}
               {:name "BD" :desc  "闭锁减" :type :bool :default false 
-               :link false :link-block-id 0 :change-online true}
-              {:name "IDEV1" :desc "积分分离偏差低限" :type :real :default 1.0
-               :change-online true}
-              {:name "IDEV2" :desc "积分分离偏差高限" :type :real :default 10.0
-               :change-online true}
-              {:name "BETA" :desc "积分分离偏差系数" :type :real :default 0.4
-               :change-online true}
+               :link false :link-block-id 0 :change-online false}
+              {:name "IDEV1" :desc "积分分离偏差低限" :type :real :default 100.0}
+              {:name "IDEV2" :desc "积分分离偏差高限" :type :real :default 100.0}
+              {:name "BETA" :desc "积分分离偏差系数" :type :real :default 1.0}
               ]
     :outputs [ :real :bool :bool ]
     :function epid
     }
    {:type-name "坏质量判断"
-    :inputs [ {:name "AIH" :desc "AI输入上限" :type :real :default 100.0
-               :change-online true}
-              {:name "AIL" :desc "AI输入下限" :type :real :default -100.0
-               :change-online true}
-              {:name "RL" :desc "变化率限制" :type :real :default 100.0
-               :change-online true}
+    :inputs [ {:name "AIH" :desc "AI输入上限" :type :real :default 100.0}
+              {:name "AIL" :desc "AI输入下限" :type :real :default -100.0}
+              {:name "RL" :desc "变化率限制" :type :real :default 100.0}
               {:name "AI" :desc "AI" :type :real :default 0.0 
                :link true :link-block-id "0" :change-online true}
               {:name "DT" :desc "延时时间" :type :real :default 40.0
-               :change-online true}
+               :min-value 0.0 :max-value 600.0 }
               ]
     :outputs [ :real ]
     :function  (fn [ctx block]
@@ -933,7 +909,7 @@
     }
    {:type-name "三角波输出"
     :inputs [ {:name "T" :desc "周期" :type :real :default 100.0
-               :change-online true}
+               :min-value 1.0 :max-value 60.0}
               ]
     :outputs [ :real ]
     :function (wrap (fn [ctx block]
@@ -950,7 +926,7 @@
 
    {:type-name "矩形波输出"
     :inputs [ {:name "T" :desc "周期" :type :real :default 100.0
-               :change-online true}]
+               :min-value 1.0 :max-value 60.0}]
     :outputs [ :real ]
     :function (wrap (fn [ctx block]
                       (let [t (get-clock-value-in-this-cycle ctx block)
@@ -960,12 +936,9 @@
                            1.0)])))
     }
    {:type-name "三值取中"
-    :inputs [ {:name "AI1" :desc "AI1" :type :real :default 0.0
-               :change-online true}
-              {:name "AI2" :desc "AI2" :type :real :default 0.0
-               :change-online true}
-              {:name "AI3" :desc "AI3" :type :real :default 0.0
-               :change-online true}]
+    :inputs [ {:name "AI1" :desc "AI1" :type :real :default 0.0}
+              {:name "AI2" :desc "AI2" :type :real :default 0.0}
+              {:name "AI3" :desc "AI3" :type :real :default 0.0}]
     :outputs [:real]
     :function (wrap (fn [ctx block]
                       (let [ai1 (get-block-input-value ctx block "AI1")
@@ -977,8 +950,7 @@
    {:type-name "反馈值"
     :inputs [ {:name "AI" :desc "输入块" :type :real :default 0.0 
                :link true :link-block-id "0" :change-online true}
-              {:name "DEFAULT" :desc "初始值" :type :real :default 0.0
-               :change-online true}]
+              {:name "DEFAULT" :desc "初始值" :type :real :default 0.0}]
     :outputs [:real]
     :function (wrap (fn [ctx block]
                       (let [bid (get-block-input-link ctx block "AI")
@@ -986,12 +958,9 @@
                         [v])))
     }
    {:type-name "传递函数"
-    :inputs [ {:name "AI" :desc "AI" :type :real :default 0.0
-               :change-online true}
-              {:name "NUM" :desc "NUM" :type :vector :default [0.1]
-               :change-online true}
-              {:name "DEN" :desc "DEN" :type :vector :default [1.0 0.1]
-               :change-online true}
+    :inputs [ {:name "AI" :desc "AI" :type :real :default 0.0}
+              {:name "NUM" :desc "NUM" :type :vector :default [1.0]}
+              {:name "DEN" :desc "DEN" :type :vector :default [10.0 1.0]}
               ]
     :outputs [:real]
     :function transfer-function
@@ -1007,9 +976,8 @@
                             l (get-block-input-value ctx block "L")]
                         [(+ (* v (- h l)) l)])))}
    {:type-name "心跳信号"
-    :inputs [ {:name "T" :desc "周期" :type :real :default 1.0 }
-              {:name "EN" :desc "有效" :type :bool :default true
-               :change-online true}
+    :inputs [ {:name "T" :desc "周期" :type :real :default 1.0}
+              {:name "EN" :desc "有效" :type :bool :default true}
               ]
     :outputs [:bool]
     :function (fn [ctx block]
@@ -1034,22 +1002,22 @@
               :link true :link-block-id 0 :change-online true}
              {:name "SP" :desc "设定值" :type :real :default 0.0 
               :link true :link-block-id 0 :change-online true}
-             {:name "NUM" :desc "NUM" :type :vector :default [1.0]
-              :change-online true}
-             {:name "DEN" :desc "DEN" :type :vector :default [10.0 1.0]
-              :change-online true}
+             {:name "NUM" :desc "NUM" :type :vector :default [1.0]}
+             {:name "DEN" :desc "DEN" :type :vector :default [10.0 1.0]}
              {:name "LAMDA" :desc "正定系数" :type :real :default 0.01
-              :change-online true}
-             {:name "L" :desc "控制长度" :type :real :default 60}
-             {:name "N" :desc "预测长度" :type :real :default 120}
+              :min-value 0.0 :max-value 1.0}
+             {:name "L" :desc "控制长度" :type :real :default 60
+              :min-value 10 :max-value 300 :change-online false}
+             {:name "N" :desc "预测长度" :type :real :default 120
+              :min-value 10 :max-value 600 :change-online false}
              {:name "Q" :desc "柔化系数" :type :real :default 1.0
-              :change-online true}
+              :min-value 0.0 :max-value 1000.0}
              {:name "DELTA" :desc "惩罚系数" :type :real :default 0.1
-              :change-online true}
+              :min-value 0.0 :max-value 1000.0}
              {:name "TAU" :desc "纯延迟" :type :real :default 0.0
-              :change-online true}
+              :min-value 0.0 :max-value 60.0}
              {:name "CF" :desc "修正系数" :type :real :default 1.0
-              :change-online true}
+              :min-value 0.1 :max-value 2.0}
              ]
     :outputs [:real]
     :function dmc}

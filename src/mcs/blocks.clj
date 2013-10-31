@@ -82,8 +82,9 @@
       (str (* 10 (inc (quot new-id 10)))))))
 
 (defn set-value-by-default-value [parameter]
-  (let [dv (:default parameter)]
-    (assoc parameter :value dv)))
+  (let [dv (:default parameter)
+        col (get parameter :change-online true)]
+    (assoc parameter :value dv :change-online col)))
 
 (defn use-value-instead-of-link [parameter]
   (if (nil? (:link parameter))
@@ -105,7 +106,7 @@
           p (assoc parameter
               :type ety
               :value (:default parameter)
-              :change-online false
+              :change-online true
               :link false
               :link-block-id "0")
           f (fn [i] (update-in p [:name] #(str % (inc i))))]
