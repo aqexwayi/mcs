@@ -634,8 +634,11 @@
 
 (defn exit-handler! [e]
   (if (sim/simulation-running?)
-    (alert "simulation is running !")
+    (alert "仿真系统正在运行中，无法退出系统！")
     (System/exit 0)))
+
+(defn toggle-full-screen-view! [e]
+  (toggle-full-screen! main-frame))
 
 (def menu-items
   [(menu
@@ -662,7 +665,10 @@
     :items [(seesaw.action/action :name "拓扑排序"
                                   :handler sort-blocks-by-topology!)
             (seesaw.action/action :name "块号排序"
-                                  :handler sort-blocks-by-id!)])
+                                  :handler sort-blocks-by-id!)
+            (seesaw.action/action :name "切换全屏"
+                                  :handler toggle-full-screen-view!)
+            ])
    (menu
     :text "帮助  "
     :items [(seesaw.action/action :name "内容")
@@ -707,7 +713,7 @@
     (println "无法运行未经授权的版本")
     (invoke-later 
      (do 
-       (-> main-frame full-screen! show!)
+       (-> main-frame pack! show!)
        (timer ui-thread :delay 500)
        (future (sim/simulate scada-stop!))))))
 
