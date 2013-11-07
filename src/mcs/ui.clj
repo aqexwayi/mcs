@@ -14,6 +14,7 @@
   (:require [clojure.java.shell])
   (:import [java.io File])
   (:import [java.awt Color Dimension])
+  (:import [java.awt.event WindowAdapter])
   (:import [javax.swing JComponent UIManager JFileChooser])
   (:import [javax.swing.filechooser FileFilter FileNameExtensionFilter])
   (:import [java.util Date])
@@ -631,6 +632,11 @@
         (output-svg g fname)
         (output-svg g (str fname ".svg"))))))
 
+(defn exit-handler! [e]
+  (if (sim/simulation-running?)
+    (alert "simulation is running !")
+    (System/exit 0)))
+
 (def menu-items
   [(menu
     :text "文件  "
@@ -645,11 +651,7 @@
                                   :handler export-svg!)
             :separator
             (seesaw.action/action :name "退出软件"
-                                  :handler (fn [e]
-                                             (do
-                                               (scada-stop! nil)
-                                               ;; (.shutdown ui-scheduler)
-                                               (dispose! main-panel))))
+                                  :handler exit-handler!)
             ])
    (menu
     :text "运行  "
@@ -677,9 +679,14 @@
   (frame
    :title main-frame-title
    :minimum-size [1280 :by 800]
-   :on-close :exit
+   :on-close :nothing ;; :exit :hide :dispose
    :menubar main-menu
    :content main-panel ))
+
+(.addWindowListener main-frame 
+                    (proxy [WindowAdapter] []
+                      (windowClosing [e]
+                        (exit-handler! e))))
 
 (defn ui-thread [e]
   (if (sim/simulation-running?)
@@ -700,10 +707,7 @@
     (println "无法运行未经授权的版本")
     (invoke-later 
      (do 
-       (-> main-frame pack! show!)
+       (-> main-frame full-screen! show!)
        (timer ui-thread :delay 500)
        (future (sim/simulate scada-stop!))))))
-
-
-
 
