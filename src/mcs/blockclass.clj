@@ -93,9 +93,10 @@
   (if-let [para (get-block-parameter block name)]
     (if (get para :link)
       (get-block-value ctx (:link-block-id para) 0)
-      (if-let [v (get para :value)]
-        v
-        (get para :default)))
+      (let [v (get para :value)]
+        (if (nil? v)
+          (get para :default)
+          v)))
     (let [bc (block-class-from-type-name (:block-type block))
           paras (get bc :inputs)
           para (find-parameter-by-name paras name)
@@ -448,10 +449,13 @@
 
 (defn ai-switch [ctx block]
   (let [bid (:block-id block)
-        st (get-block-state ctx bid) ;; steady state
-        ss (or (nil? st) (:steady? st))
         sw0 (get-block-input-value ctx block "SW")
-        sw1 (if (nil? st) sw0 (:last-switch st))
+        st- (get-block-state ctx bid)
+        st (if (nil? st-) 
+             {:steady? true :last-switch sw0}
+             st-)
+        ss (:steady? st) ;; steady state
+        sw1 (:last-switch st)
         ctx2 (set-block-state ctx bid {:steady? true
                                        :last-switch sw0})
         ]
@@ -585,7 +589,7 @@
                :min-value 0.0 }
               {:name "R12" :desc "IN1 TO IN2速率" :type :real :default 100.0 
                :min-value 0.0 }
-              {:name "SW" :desc "切换开关" :type :bool :default 0
+              {:name "SW" :desc "切换开关" :type :bool :default false
                :link true :link-block-id 0 :change-online false}
               {:name "AI1" :desc "AI1" :type :real :default 0.0
                :link true :link-block-id "0" :change-online true}
@@ -982,7 +986,8 @@
     :outputs [:bool]
     :function (fn [ctx block]
                 (let [bid (:block-id block)
-                      en (get-block-input-value ctx block "EN")]
+                      en (get-block-input-value ctx block "EN")
+                      ]
                   (if (and en (:running ctx))
                     (let [interval (:interval ctx)
                           t (get-block-input-value ctx block "T")
