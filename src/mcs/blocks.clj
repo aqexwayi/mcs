@@ -195,7 +195,16 @@
 ;;  ... }
 ;;
 (def parameter-check-passes 
-  [;; check-boolean-value
+  [;; check-mode (:value/:link/:both)
+   [(fn [para] 
+      (let [m (:mode para)]
+        (or (= m :value) (= m :link))))
+    [(fn [p v]
+       (not= (:mode p) :link))
+     (fn [p v]
+       (not= (:mode p) :value))
+     ]]
+   ;; check-boolean-value
    [#(= :bool (:type %))
     [(fn [p v] 
        (let [uv (clojure.string/upper-case v)]

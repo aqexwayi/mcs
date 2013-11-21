@@ -760,7 +760,7 @@
    {:type-name "定宽脉冲"
     :inputs [ {:name "DT" :desc "延时时间" :type :real :default 10.0
                :min-value 0.0 :max-value 1000.0}
-              {:name "DI" :desc "DI" :type :bool :default false
+              {:name "DI" :desc "DI" :type :bool :default false :mode :link 
                :link true :link-block-id "0" :change-online true}
               ]
     :outputs [:bool :bool]
@@ -784,7 +784,7 @@
    {:type-name "延时通"
     :inputs [ {:name "DT" :desc "延时时间" :type :real :default 10.0
                :min-value 0.0 :max-value 1000.0}
-              {:name "DI" :desc "DI" :type :bool :default false
+              {:name "DI" :desc "DI" :type :bool :default false :mode :link
                :link true :link-block-id "0" :change-online true}
               ]
     :outputs [:bool :bool]
@@ -810,7 +810,7 @@
    {:type-name "延时断"
     :inputs [ {:name "DT" :desc "延时时间" :type :real :default 10.0
                :min-value 0.0 :max-value 1000.0}
-              {:name "DI" :desc "DI" :type :bool :default false
+              {:name "DI" :desc "DI" :type :bool :default false :mode :link
                :link true :link-block-id "0" :change-online true}
               ]
     :outputs [:bool :bool]
@@ -835,7 +835,7 @@
    {:type-name "模拟量迟延"
     :inputs [ {:name "DT" :desc "迟延时间" :type :real :default 1.0
                :min-value 0.0 :max-value 60.0}
-              {:name "AI" :desc "AI" :type :real :default 0.0
+              {:name "AI" :desc "AI" :type :real :default 0.0 :mode :link
                :link true :link-block-id "0" :change-online true}
               ]
     :outputs [ :real ]
@@ -881,7 +881,7 @@
     :inputs [ {:name "AIH" :desc "AI输入上限" :type :real :default 100.0}
               {:name "AIL" :desc "AI输入下限" :type :real :default -100.0}
               {:name "RL" :desc "变化率限制" :type :real :default 100.0}
-              {:name "AI" :desc "AI" :type :real :default 0.0 
+              {:name "AI" :desc "AI" :type :real :default 0.0 :mode :link
                :link true :link-block-id "0" :change-online true}
               {:name "DT" :desc "延时时间" :type :real :default 40.0
                :min-value 0.0 :max-value 600.0 }
@@ -952,7 +952,7 @@
                         [v])))
     }
    {:type-name "反馈值"
-    :inputs [ {:name "AI" :desc "输入块" :type :real :default 0.0 
+    :inputs [ {:name "AI" :desc "输入块" :type :real :default 0.0 :mode :link
                :link true :link-block-id "0" :change-online true}
               {:name "DEFAULT" :desc "初始值" :type :real :default 0.0}]
     :outputs [:real]
