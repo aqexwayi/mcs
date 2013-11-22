@@ -1,4 +1,5 @@
-.nrepl-port
+.nrepl*
+.lein*
 
 #################
 ## Eclipse
