@@ -526,8 +526,10 @@
     :function (wrap output-value-parameter)
     }
    {:type-name "超前滞后"
-    :inputs [ {:name "LEAD" :desc "超前时间" :type :real :default 0.0 }
-              {:name "LAG" :desc "滞后时间" :type :real :default 0.0 }
+    :inputs [ {:name "LEAD" :desc "超前时间" :type :real :default 0.0
+               :min-value 0.0 }
+              {:name "LAG" :desc "滞后时间" :type :real :default 0.0
+               :min-value 0.0 }
               {:name "K" :desc "增益" :type :real :default 1.0 }
               {:name "RATE" :desc "输出限速" :type :real :default 1.0
                :link false :link-block-id "0" :change-online true}
@@ -540,7 +542,8 @@
     :function lead-lag
     } 
    {:type-name "一阶惯性"
-    :inputs [ {:name "LAG" :desc "惯性时间" :type :real :default 10.0 }
+    :inputs [ {:name "LAG" :desc "惯性时间" :type :real :default 10.0
+               :min-value 0.0 }
               {:name "K" :desc "增益" :type :real :default 1.0 }
               {:name "AI" :desc "AI" :type :real :default 0.0
                :link true :link-block-id "0" :change-online true}

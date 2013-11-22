@@ -189,23 +189,23 @@
     (if row
       (let [para-name (.getValueAt table row 0)
             para (first (filter #(= para-name (:name %))
-                                (:inputs @bs/current-block)))
-            ret (input-parameter-dlg para)
-            [pv pl plid] (mapv util/trim+ ret)
-            ]
-        (if (nil? pv)
-          (alert main-frame "取消参数修改！")
-          (if (bs/valid-parameter-value? para pv pl plid)
-            (try
-              (if (and (sim/simulation-running?) 
-                       (not (get para :change-online false)))
-                (alert main-frame "不能在线修改参数！")
-                (do
-                  (bs/change-parameter-of-current-block! para pv pl plid)
-                  (repaint! main-panel)))
-              (catch Exception e 
-                (alert main-frame "不正确的参数！")))
-            (alert main-frame "不正确的参数！")))))))
+                                (:inputs @bs/current-block)))]
+        (if (not (nil? para)) 
+          (let [ret (input-parameter-dlg para)
+                [pv pl plid] (mapv util/trim+ ret)]
+            (if (nil? pv)
+              (alert main-frame "取消参数修改！")
+              (if (bs/valid-parameter-value? para pv pl plid)
+                (try
+                  (if (and (sim/simulation-running?) 
+                           (not (get para :change-online false)))
+                    (alert main-frame "不能在线修改参数！")
+                    (do
+                      (bs/change-parameter-of-current-block! para pv pl plid)
+                      (repaint! main-panel)))
+                  (catch Exception e 
+                    (alert main-frame "不正确的参数！")))
+                (alert main-frame "不正确的参数！")))))))))
 
 (def link-blocks (atom []))
 

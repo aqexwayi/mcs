@@ -163,15 +163,15 @@
       (class java.lang.String))
     (getValueAt [r c]
       (if-let [b @current-block]
-        (let [bi (nth (:inputs @current-block) r)]
+        (let [bi (nth (:inputs @current-block) r nil)]
           (case c
-            0 (str (:name bi))
-            1 (str (:desc bi))
-            2 (str (:type bi))
-            3 (str (:value bi))
-            4 (str (:link bi))
-            5 (str (:link-block-id bi))
-            6 (str (:change-online bi))
+            0 (str (get bi :name ""))
+            1 (str (get bi :desc ""))
+            2 (str (get bi :type ""))
+            3 (str (get bi :value ""))
+            4 (str (get bi :link ""))
+            5 (str (get bi :link-block-id ""))
+            6 (str (get bi :change-online ""))
             nil))
         ""))))
 
@@ -247,8 +247,12 @@
 (defn change-parameter-of-current-block! [para pvalue plink plinkid]
   (let [b @current-block
         bc (bc/block-class-from-type-name (:block-type b))
+        v (case (:type para)
+            :real (Double/parseDouble pvalue)
+            :bool (Boolean/parseBoolean pvalue)
+            (read-string pvalue))
         np (assoc para 
-             :value (read-string pvalue)
+             :value v
              :link plink
              :link-block-id plinkid)
         nps (replace-parameter np (:inputs b))
