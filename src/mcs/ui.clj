@@ -8,7 +8,7 @@
   (:require [mcs.util :as util])
   (:require [mcs.mac :as mac])
   (:use [seesaw core])
-  (:use [rhizome dot])
+  (:require [rhizome viz])
   (:require [seesaw action font table border forms mouse])
   (:require [clojure.java.io])
   (:require [clojure.java.shell])
@@ -618,16 +618,15 @@
   (let [f (fn [bid] 
             {:label (str bid "\n" (:block-desc (bc/find-block-by-id bid @bs/blocks))) 
              :shape :box})
-        dot (graph->dot (keys g) g :node->descriptor f)
+        svg (rhizome.viz/graph->svg (keys g) g :node->descriptor f)
         ]
-    (do
-      (spit "tmp.dot" dot)
-      (clojure.java.shell/sh "dot" "-Tsvg:cairo" (str "-o" fname) "tmp.dot"))))
+    (spit fname svg)))
 
 (defn export-svg! [e]
   (if-let [f (mcs-choose-file :save)]
     (let [fname (.getPath f)
-          g (bs/build-graph @bs/blocks)]
+          g (bs/build-graph @bs/blocks)
+          ]
       (if (.endsWith fname ".svg")
         (output-svg g fname)
         (output-svg g (str fname ".svg"))))))
