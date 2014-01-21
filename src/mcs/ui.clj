@@ -12,12 +12,14 @@
   (:require [seesaw action font table border forms mouse])
   (:require [clojure.java.io])
   (:require [clojure.java.shell])
+  (:require [clojure.string])
   (:import [java.io File])
-  (:import [java.awt Color Dimension])
+  (:import [java.awt Color Dimension GraphicsEnvironment])
   (:import [java.awt.event WindowAdapter])
   (:import [javax.swing JComponent UIManager JFileChooser])
   (:import [javax.swing.filechooser FileFilter FileNameExtensionFilter])
   (:import [java.util Date])
+  (:import [java.text SimpleDateFormat])
   (:import [java.util.concurrent Executors TimeUnit])
   (:import [java.net InetAddress NetworkInterface])
   (:gen-class))
@@ -26,10 +28,13 @@
                          :port 27017
                          :db-name "scada"}))
 
+(def current-project-file-name (atom nil))
+(def current-project-content (atom nil))
+
 (native!) ;; must call it very early 
 
 (def resource-root-directory
-  "file:/D:/clojure-projects/be/resources/")
+  "file:/D:/projects/mcs/resources/")
 
 (defn resource* [r]
   (or (clojure.java.io/resource r)
@@ -80,7 +85,7 @@
 
 (defn action-add-block [e]
   (if (sim/simulation-running?)
-    (alert main-frame "仿真运行中不能增加功能块")
+    (alert main-frame "运行中不能增加功能块")
     (let [[block-id block-type block-desc] (add-block-dlg)]
       (if (nil? block-id)
         (alert main-frame "取消添加功能块。")
@@ -134,7 +139,7 @@
 
 (defn action-change-block [e]
   (if (sim/simulation-running?)
-    (alert main-frame "仿真运行中不能修改功能块信息")
+    (alert main-frame "运行中不能修改功能块信息")
     (let [table (select main-panel [:#block-table])
           rows (selection table {:multi? true})]
       (if (nil? rows)
@@ -500,29 +505,50 @@
     (alert main-frame "组态系统已经在运行！")
     (if-let [f (mcs-choose-file :open)]
       (let [s (slurp f :encoding "utf-8")
-            [cfg blks ait aot dit dot] (read-string s)] 
-        (let [table (select main-panel [:#block-table])]
-          (selection! table nil)
-          (reset! bs/current-block nil)
-          (reset! bs/blocks blks)
-          (reset! scada-config cfg)
-          (reset! (:AI dp/data-point-tables) ait)
-          (reset! (:AO dp/data-point-tables) aot)
-          (reset! (:DI dp/data-point-tables) dit)
-          (reset! (:DO dp/data-point-tables) dot)
-          (.invalidate table)
-          (repaint! main-panel)
-          )))))
+            [cfg blks ait aot dit dot] (read-string s) 
+            table (select main-panel [:#block-table])]
+        (selection! table nil)
+        (reset! bs/current-block nil)
+        (reset! bs/blocks blks)
+        (reset! scada-config cfg)
+        (reset! (:AI dp/data-point-tables) ait)
+        (reset! (:AO dp/data-point-tables) aot)
+        (reset! (:DI dp/data-point-tables) dit)
+        (reset! (:DO dp/data-point-tables) dot)
+        (.invalidate table)
+        (repaint! main-panel)
+        (reset! current-project-file-name (.getAbsolutePath f))
+        (reset! current-project-content s)
+        ))))
+
+(defn dump-project-file-to-str []
+  (str [@scada-config
+        @bs/blocks 
+        @(:AI dp/data-point-tables)
+        @(:AO dp/data-point-tables)
+        @(:DI dp/data-point-tables)
+        @(:DO dp/data-point-tables)]))
+
+(defn file-name-with-date [file-name]
+  (let [n (clojure.string/reverse 
+           (subs 
+            (clojure.string/reverse file-name) 4)) ;; drop ".mcs"
+        formater (SimpleDateFormat. "yyyyMMdd") ]
+    (str n "." (.format formater (Date.)) ".mcs")))
+
+(defn save-and-backup-current-project! []
+  (if-let [file-name @current-project-file-name]
+    (let [c (dump-project-file-to-str)
+          c0 @current-project-content]
+      (if (not= c c0) ;; something changed
+        (do
+          (spit (File. (file-name-with-date file-name)) c0 :encoding "utf-8")
+          (spit (File. file-name) c :encoding "utf-8"))))))
 
 (defn save-project! [e]
   (if-let [f (mcs-choose-file :save)]
     (let [fn (.getPath f)
-          s (str [@scada-config 
-                  @bs/blocks 
-                  @(:AI dp/data-point-tables)
-                  @(:AO dp/data-point-tables)
-                  @(:DI dp/data-point-tables)
-                  @(:DO dp/data-point-tables)])]
+          s (dump-project-file-to-str)]
       (if (.endsWith fn ".mcs")
         (spit f s :encoding "utf-8")
         (spit (File. (str fn ".mcs")) s :encoding "utf-8"))
@@ -580,7 +606,7 @@
   (if (sim/simulation-running?)
     (do
       (sim/simulation-turn-off!)
-      (alert main-frame "系统仿真停止")
+      (alert main-frame "系统停止")
       )))
 
 (defn sort-blocks-by-id! [e]
@@ -592,12 +618,12 @@
   (repaint! main-panel))
 
 (def menu-item-scada-start
-  (seesaw.action/action :name "组态系统运行"
+  (seesaw.action/action :name "系统运行"
                         :handler scada-start!
                         :enabled? true))
 
 (def menu-item-scada-stop
-  (seesaw.action/action :name "组态系统停止"
+  (seesaw.action/action :name "系统停止"
                         :handler scada-stop!
                         :enabled? false))
 
@@ -632,8 +658,9 @@
         (output-svg g (str fname ".svg"))))))
 
 (defn exit-handler! [e]
+  (save-and-backup-current-project!)
   (if (sim/simulation-running?)
-    (alert "仿真系统正在运行中，无法退出系统！")
+    (alert "系统正在运行中，无法退出系统！")
     (System/exit 0)))
 
 (defn toggle-full-screen-view! [e]
@@ -700,7 +727,7 @@
       (config! main-frame :title title)
       (.setEnabled menu-item-scada-start false)
       (.setEnabled menu-item-scada-stop true))
-    (let [title (str main-frame-title " [ 停止 ] ")]
+    (let [title (str main-frame-title " [ 组态 ] ")]
       (config! main-frame :title title)
       (.setEnabled menu-item-scada-start true)
       (.setEnabled menu-item-scada-stop false)
@@ -713,6 +740,9 @@
     (invoke-later 
      (do 
        (-> main-frame pack! show!)
+       (let [g (GraphicsEnvironment/getLocalGraphicsEnvironment)
+             r (.getMaximumWindowBounds g)]
+         (.setBounds main-frame r))
        (timer ui-thread :delay 500)
        (future (sim/simulate scada-stop!))))))
 
