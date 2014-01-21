@@ -27,6 +27,7 @@
         "00-2C-CC-CA-FC-BD"
         "00-0B-AB-74-FA-90"
         "00-05-5D-0F-40-E0" ;; DFE530Tx
+        "F0-DE-F1-09-C4-88" ;; X201
         ))
 
 (defn -valid-mac-address? []
@@ -40,6 +41,6 @@
 
 (defn valid-mac-address? []
   (if (util/is-os-windows?)
-    (-valid-mac-address?)
+    true ;;(-valid-mac-address?)
     true
     ))
