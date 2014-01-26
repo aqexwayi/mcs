@@ -203,7 +203,7 @@
               (if (bs/valid-parameter-value? para pv pl plid)
                 (try
                   (if (and (sim/simulation-running?) 
-                           (not (get para :change-online false)))
+                           (not (get para :change-online true)))
                     (alert main-frame "不能在线修改参数！")
                     (do
                       (bs/change-parameter-of-current-block! para pv pl plid)
@@ -654,7 +654,9 @@
   (save-and-backup-current-project!)
   (if (sim/simulation-running?)
     (alert "系统正在运行中，无法退出系统！")
-    (System/exit 0)))
+    (if (nil? @current-project-file-name)
+      (alert "当前工程还未命名和保存")
+      (System/exit 0))))
 
 (defn toggle-full-screen-view! [e]
   (toggle-full-screen! main-frame))

@@ -96,6 +96,7 @@
             d6 (util/map-key-from-string-to-keyword d5)
             ]
         (reset! simulation-context ctx3)
+        ;; (println (:blocks-value ctx3))
         (if (controller-working?)
           (let [t2 (System/currentTimeMillis)
                 tw (Date.)]
