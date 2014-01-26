@@ -62,25 +62,35 @@
 ;; if this block is not in current blocks-value table
 ;; we must use the value one clock earlier.
 ;; this happen when
-;; (1) current simulation block.
+;; (1) try to get value of current simulation block.
 ;; (2) input block with larger block id.
 (defn get-block-value- [ctx block-id offset]
   (if (block-value-computed? ctx block-id) 
     (get (get-blocks-before ctx offset) block-id)
     (get (get-blocks-before ctx (inc offset)) block-id)))
 
-(defn get-block-value [ctx block-id offset]
-  (let [v (get-block-value- ctx block-id offset)]
-    (if (nil? v)
-      (let [v (get-block-default-value ctx block-id)]
-        (if (nil? v)
-          (if (some #{block-id} (:di ctx))
-            false
-            (if (some #{block-id} (:ai ctx))
-              0.0
-              nil))
-          v))
-      v)))
+(defn get-block-value)
+
+(defn get-block-value 
+  "get value of block in current clock tick, 
+   if this block is not computed yet , use vaule of last clock tick"
+  ([ctx block-id offset]
+     (let [v (get-block-value- ctx block-id offset)]
+       (if (nil? v)
+         (let [v (get-block-default-value ctx block-id)]
+           (if (nil? v)
+             (if (some #{block-id} (:di ctx))
+               false
+               (if (some #{block-id} (:ai ctx))
+                 0.0
+                 nil))
+             v))
+         v)))
+  ([ctx block-id offset default-value]
+     (let [v (get-block-value- ctx block-id offset)]
+       (if (nil? v)
+         default-value
+         v))))
 
 ;; if you want to use 1 to index the last value of the block , 
 ;; you can't pass 1 to get-block-value directly. because 
@@ -797,7 +807,7 @@
                       offset (int (/ dt t))
                       diid (get-block-input-link ctx block "DI")
                       di0 (get-block-value ctx diid 0)
-                      di1 (get-block-value ctx diid 1)
+                      di1 (get-block-value ctx diid 1 false)
                       bid (Integer/parseInt (:block-id block))
                       do1id (str bid)
                       do2id (str (inc bid))
@@ -823,7 +833,7 @@
                       offset (int (/ dt t))
                       diid (get-block-input-link ctx block "DI")
                       di0 (get-block-value ctx diid 0)
-                      di1 (get-block-value ctx diid 1)
+                      di1 (get-block-value ctx diid 1 false)
                       bid (Integer/parseInt (:block-id block))
                       do1id (str bid)
                       do2id (str (inc bid))

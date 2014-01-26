@@ -30,18 +30,18 @@
 
 (def current-project-file-name (atom nil))
 (def current-project-content (atom nil))
+(declare save-and-backup-current-project!)
 
 (native!) ;; must call it very early 
 
-(def resource-root-directory
-  "file:/D:/projects/mcs/resources/")
+(def resource-root-directory "file:/D:/projects/mcs/resources/")
 
 (defn resource* [r]
   (or (clojure.java.io/resource r)
       (str resource-root-directory r)))
 
-(def main-panel)
-(def main-frame)
+(declare main-panel)
+(declare main-frame)
 (def main-frame-title "华电万通组态软件")
 
 (defn center-component! 
@@ -484,21 +484,28 @@
       (.getSelectedFile mcs-file-chooser))))
 
 (defn new-project! [e]
-  (if (-> (dialog :option-type :ok-cancel
-                  :content "你确定要放弃当前工程，建立新工程吗？")
-          pack!
-          center-dialog!
-          show!)
-    (let [table (select main-panel [:#block-table])]
-      (selection! table nil)
-      (reset! bs/current-block nil)
-      (reset! bs/blocks [])
-      (reset! bs/current-block nil)
-      (reset! (:AI dp/data-point-tables) [])
-      (reset! (:AO dp/data-point-tables) [])
-      (reset! (:DI dp/data-point-tables) [])
-      (reset! (:DO dp/data-point-tables) [])
-      (repaint! main-panel))))
+  (if (sim/simulation-running?)
+    (alert main-frame "组态系统已经在运行！")
+    (if (-> (dialog :option-type :ok-cancel
+                    :content "你确定要放弃当前工程，建立新工程吗？")
+            pack!
+            center-dialog!
+            show!)
+      (let [table (select main-panel [:#block-table])]
+        (do
+          (save-and-backup-current-project!)
+          (selection! table nil)
+          (reset! bs/current-block nil)
+          (reset! bs/blocks [])
+          (reset! bs/current-block nil)
+          (reset! (:AI dp/data-point-tables) [])
+          (reset! (:AO dp/data-point-tables) [])
+          (reset! (:DI dp/data-point-tables) [])
+          (reset! (:DO dp/data-point-tables) [])
+          (repaint! main-panel)
+          (reset! current-project-file-name nil)
+          (reset! current-project-content nil)
+          )))))
 
 (defn load-project! [e]
   (if (sim/simulation-running?)
@@ -507,19 +514,21 @@
       (let [s (slurp f :encoding "utf-8")
             [cfg blks ait aot dit dot] (read-string s) 
             table (select main-panel [:#block-table])]
-        (selection! table nil)
-        (reset! bs/current-block nil)
-        (reset! bs/blocks blks)
-        (reset! scada-config cfg)
-        (reset! (:AI dp/data-point-tables) ait)
-        (reset! (:AO dp/data-point-tables) aot)
-        (reset! (:DI dp/data-point-tables) dit)
-        (reset! (:DO dp/data-point-tables) dot)
-        (.invalidate table)
-        (repaint! main-panel)
-        (reset! current-project-file-name (.getAbsolutePath f))
-        (reset! current-project-content s)
-        ))))
+        (do
+          (save-and-backup-current-project!)
+          (selection! table nil)
+          (reset! bs/current-block nil)
+          (reset! bs/blocks blks)
+          (reset! scada-config cfg)
+          (reset! (:AI dp/data-point-tables) ait)
+          (reset! (:AO dp/data-point-tables) aot)
+          (reset! (:DI dp/data-point-tables) dit)
+          (reset! (:DO dp/data-point-tables) dot)
+          (.invalidate table)
+          (repaint! main-panel)
+          (reset! current-project-file-name (.getAbsolutePath f))
+          (reset! current-project-content s)
+          )))))
 
 (defn dump-project-file-to-str []
   (str [@scada-config
@@ -547,15 +556,12 @@
 
 (defn save-project! [e]
   (if-let [f (mcs-choose-file :save)]
-    (let [fn (.getPath f)
-          s (dump-project-file-to-str)]
-      (if (.endsWith fn ".mcs")
-        (spit f s :encoding "utf-8")
-        (spit (File. (str fn ".mcs")) s :encoding "utf-8"))
-      )))
-
-(def menu-item-scada-start)
-(def menu-item-scada-stop)
+    (let [fname (util/postfixed-file-name (.getPath f) "mcs")
+          s (dump-project-file-to-str)
+          f2 (File. fname)]
+      (spit f2 s :encoding "utf-8")
+      (reset! current-project-file-name (.getAbsolutePath f2))
+      (reset! current-project-content s))))
 
 (defn scada-config-dlg []
   (let [items ["主机地址" (text :id :scada-config-host
@@ -617,16 +623,6 @@
   (swap! bs/blocks #(into [] (bs/sort-by-topology %)))
   (repaint! main-panel))
 
-(def menu-item-scada-start
-  (seesaw.action/action :name "系统运行"
-                        :handler scada-start!
-                        :enabled? true))
-
-(def menu-item-scada-stop
-  (seesaw.action/action :name "系统停止"
-                        :handler scada-stop!
-                        :enabled? false))
-
 (defn show-about-dialog [e]
   (->
    (dialog :content (vertical-panel 
@@ -640,7 +636,7 @@
    center-dialog!
    show!))
 
-(defn- output-svg [g fname]
+(defn output-svg [g fname]
   (let [f (fn [bid] 
             {:label (str bid "\n" (:block-desc (bc/find-block-by-id bid @bs/blocks))) 
              :shape :box})
@@ -651,11 +647,8 @@
 (defn export-svg! [e]
   (if-let [f (mcs-choose-file :save)]
     (let [fname (.getPath f)
-          g (bs/build-graph @bs/blocks)
-          ]
-      (if (.endsWith fname ".svg")
-        (output-svg g fname)
-        (output-svg g (str fname ".svg"))))))
+          g (bs/build-graph @bs/blocks)]
+      (output-svg g (util/postfixed-file-name fname "svg")))))
 
 (defn exit-handler! [e]
   (save-and-backup-current-project!)
@@ -665,6 +658,16 @@
 
 (defn toggle-full-screen-view! [e]
   (toggle-full-screen! main-frame))
+
+(def menu-item-scada-start
+  (seesaw.action/action :name "系统运行"
+                        :handler scada-start!
+                        :enabled? true))
+
+(def menu-item-scada-stop
+  (seesaw.action/action :name "系统停止"
+                        :handler scada-stop!
+                        :enabled? false))
 
 (def menu-items
   [(menu

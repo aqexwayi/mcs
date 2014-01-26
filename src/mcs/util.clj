@@ -84,3 +84,8 @@
       true
       (catch Exception e false))
     false))
+
+(defn postfixed-file-name [file-name postfix]
+  (if (.endsWith file-name postfix)
+    file-name
+    (str file-name "." postfix)))
