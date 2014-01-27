@@ -96,7 +96,6 @@
             d6 (util/map-key-from-string-to-keyword d5)
             ]
         (reset! simulation-context ctx3)
-        ;; (println (:blocks-value ctx3))
         (if (controller-working?)
           (let [t2 (System/currentTimeMillis)
                 tw (Date.)]
@@ -118,15 +117,18 @@
                     t0 (:schedule-time ctx)
                     interval (int (* (:interval ctx) 1000))]
                 (if (> tc t0)
-                  (let [dt (* (inc (int (/ (- tc t0) interval))) interval)
-                        t1 (+ t0 dt)]
-                    (if (one-step)
-                      (do
-                        (swap! simulation-context #(assoc % :schedule-time t1))
-                        (Thread/sleep 50))
-                      (do
-                        (simulation-turn-off!)
-                        (Thread/sleep 250))))
+                  (if (or (and (empty? (:ai ctx)) (empty? (:di ctx))) 
+                          (db/data-ready?))
+                    (let [dt (* (inc (int (/ (- tc t0) interval))) interval)
+                          t1 (+ t0 dt)]
+                      (if (one-step)
+                        (do
+                          (swap! simulation-context #(assoc % :schedule-time t1))
+                          (Thread/sleep 50))
+                        (do
+                          (simulation-turn-off!)
+                          (Thread/sleep 250))))
+                    (Thread/sleep 50))
                   (Thread/sleep 50)))
               (if (db/connect! @simulation-context)
                 (swap! simulation-context #(assoc % :db-connected? true))

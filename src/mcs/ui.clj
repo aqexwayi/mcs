@@ -604,6 +604,7 @@
         (if (empty? r)
           (if-let [nc (scada-config-dlg)]
             (do
+              (save-and-backup-current-project!)
               (reset! scada-config nc)
               (sim/simulation-turn-on! nc)))
           (alert main-frame (str (ffirst r) (nfirst r))))))))
@@ -651,12 +652,18 @@
       (output-svg g (util/postfixed-file-name fname "svg")))))
 
 (defn exit-handler! [e]
-  (save-and-backup-current-project!)
   (if (sim/simulation-running?)
     (alert "系统正在运行中，无法退出系统！")
     (if (nil? @current-project-file-name)
-      (alert "当前工程还未命名和保存")
-      (System/exit 0))))
+      (if (-> (dialog :option-type :ok-cancel
+                      :content "当前工程还未命名和保存!\n 按'确定'放弃保存并退出程序\n 按'取消'将返回程序继续编辑组态")
+              pack!
+              center-dialog!
+              show!)
+        (System/exit 0))
+      (do
+        (save-and-backup-current-project!)
+        (System/exit 0)))))
 
 (defn toggle-full-screen-view! [e]
   (toggle-full-screen! main-frame))

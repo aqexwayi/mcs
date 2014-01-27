@@ -39,28 +39,25 @@
 
 (defn read! []
   (let [t (Date.)
-        cn "DATAIN"
-        t1 (Date. (- (.getTime t) 60000))
-        t2 (Date. (+ (.getTime t) 60000))
-        ds1 (monger.collection/find-maps cn {:_id {$gt t1 $lte t}})
-        ds2 (monger.collection/find-maps cn {:_id {$gte t $lt t2}})
-        d1 (last ds1)
-        d2 (first ds2)
-        d1-t (:_id d1)
-        d2-t (:_id d2)
-        ;;_ (println "READ:" d1)
-        d1-v (dissoc d1 :_id)
-        d2-v (dissoc d2 :_id)]
-    (if (nil? d1)
+        t- (Date. (- (.getTime t) 60000))
+        ds (monger.collection/find-maps "DATAIN" {:_id {$gt t-}})
+        d (last ds)
+        ]
+    (if (nil? d)
       {} 
-      (if (nil? d2)
-        d1-v
-        d1-v
-        ))))
+      (dissoc d :_id))))
 
-(comment (merge-with (fn [v1 v2]
-                       (interpolate-by-time [d1-t v1] [d2-t v2] t))
-                     d1-v d2-v))
+(defn data-ready? []
+  (let [t (Date.)
+        t- (Date. (- (.getTime t) 60000))
+        ds (monger.collection/find-maps "DATAIN" {:_id {$gt t-}})
+        d (last ds)]
+    (if (nil? d)
+      false
+      (let [t0 (:id d)]
+        (if (nil? t0)
+          false
+          (< (- (.getTime t) (.getTime t0)) 100))))))
 
 (defn write-data-with-time! [date data]
   (let [d (merge {:_id date} data)]
