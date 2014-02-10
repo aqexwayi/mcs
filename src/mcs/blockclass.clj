@@ -429,8 +429,8 @@
                                        :dU dU-new})
         u (get-current-block-value ctx bid 1)
         v (+ u du0)
-        _ (println "dU0=   " du0)
-        _ (println "Y0-new=" (take 5 Y0-new))
+        ;; _ (println "dU0=   " du0)
+        ;; _ (println "Y0-new=" (take 5 Y0-new))
         ]
     (update-context ctx2 {bid v})))
 
@@ -922,7 +922,7 @@
     }
    {:type-name "三角波输出"
     :inputs [ {:name "T" :desc "周期" :type :real :default 100.0
-               :min-value 1.0 :max-value 60.0}
+               :min-value 1.0 :max-value 120.0}
               ]
     :outputs [ :real ]
     :function (wrap (fn [ctx block]
@@ -939,7 +939,7 @@
 
    {:type-name "矩形波输出"
     :inputs [ {:name "T" :desc "周期" :type :real :default 100.0
-               :min-value 1.0 :max-value 60.0}]
+               :min-value 1.0 :max-value 120.0}]
     :outputs [ :real ]
     :function (wrap (fn [ctx block]
                       (let [t (get-clock-value-in-this-cycle ctx block)

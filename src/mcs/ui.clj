@@ -574,7 +574,7 @@
                             :text (:db-name @scada-config))
                (seesaw.forms/next-line)
                "仿真周期" (combobox :id :simulation-interval
-                                    :model [1000 500 250]) "ms"]]
+                                    :model [1000 500 200]) "ms"]]
     (->
      (dialog :id :scada-config-dlg
              :title "SCADA数据总线配置"
@@ -735,11 +735,11 @@
 (defn ui-thread [e]
   (if (sim/simulation-running?)
     (let [c (sim/get-simulation-interval)
-          title (str main-frame-title " [ 运行 : 仿真周期=" c "s ]")]
+          title (str main-frame-title " [运行] " @current-project-file-name)]
       (config! main-frame :title title)
       (.setEnabled menu-item-scada-start false)
       (.setEnabled menu-item-scada-stop true))
-    (let [title (str main-frame-title " [ 组态 ] ")]
+    (let [title (str main-frame-title " [组态] " @current-project-file-name)]
       (config! main-frame :title title)
       (.setEnabled menu-item-scada-start true)
       (.setEnabled menu-item-scada-stop false)

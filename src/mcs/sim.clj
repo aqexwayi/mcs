@@ -98,7 +98,8 @@
         (reset! simulation-context ctx3)
         (if (controller-working?)
           (let [t2 (System/currentTimeMillis)
-                tw (Date.)]
+                tw (Date.)
+                _ (println "time=" (- t2 t0))]
             (db/write-data-with-time! tw (merge d1 d6))
             (if (> *debug-level* 0)
               (let [t3 (System/currentTimeMillis)]
@@ -117,8 +118,9 @@
                     t0 (:schedule-time ctx)
                     interval (int (* (:interval ctx) 1000))]
                 (if (> tc t0)
-                  (if (or (and (empty? (:ai ctx)) (empty? (:di ctx))) 
-                          (db/data-ready?))
+                  (if (or (and (empty? (:ai ctx)) (empty? (:di ctx)))
+                          ;;(db/data-ready?)
+                          true)
                     (let [dt (* (inc (int (/ (- tc t0) interval))) interval)
                           t1 (+ t0 dt)]
                       (if (one-step)
@@ -127,7 +129,7 @@
                           (Thread/sleep 50))
                         (do
                           (simulation-turn-off!)
-                          (Thread/sleep 250))))
+                          (Thread/sleep 200))))
                     (Thread/sleep 50))
                   (Thread/sleep 50)))
               (if (db/connect! @simulation-context)
@@ -139,7 +141,7 @@
               (do
                 (swap! simulation-context #(assoc % :db-connected? false))
                 (db/disconnect!)))
-            (Thread/sleep 250)))))
+            (Thread/sleep 200)))))
     (catch Exception e
       (do
         (.printStackTrace e)

@@ -57,7 +57,7 @@
       (let [t0 (:id d)]
         (if (nil? t0)
           false
-          (< (- (.getTime t) (.getTime t0)) 100))))))
+          (< (- (.getTime t) (.getTime t0)) 1000))))))
 
 (defn write-data-with-time! [date data]
   (let [d (merge {:_id date} data)]
