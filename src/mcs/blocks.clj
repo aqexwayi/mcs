@@ -49,6 +49,9 @@
 (defn blocks-before [b bs]
   (filter #(block-using-block-id? b (:block-id %)) bs))
 
+(defn blocks-after [b bs]
+  (filter #(block-using-block-id? % (:block-id b)) bs))
+
 (defn sort-by-id [bs]
   (sort-by #(Integer/parseInt (:block-id %)) bs))
 
@@ -70,7 +73,9 @@
 (defn build-graph [bs]
   (into {} 
         (for [b bs] 
-          [(:block-id b) (mapv :block-id (blocks-before b bs))])))
+          [(:block-id b) 
+           (mapv :block-id (blocks-after b bs))
+           ])))
 
 (defn get-available-block-id [bs]
   (if (empty? bs)

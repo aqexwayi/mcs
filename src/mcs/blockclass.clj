@@ -130,31 +130,6 @@
   (let [last-v (get-current-block-value ctx bid 1)]
     (update-context ctx {bid last-v})))
 
-(defn schedule-timer [ctx bid offset action]
-  (update-in ctx [:timers] assoc bid [offset action]))
-
-(defn cancel-timer [ctx bid]
-  (update-in ctx [:timers] dissoc bid))
-
-(defn run-timer [ctx]
-  (let [ts (into () (:timers ctx))
-        ff1 (fn [[id [off act]]] [id [(dec off) act]])
-        ts2 (map ff1 ts)
-        [ts3 ts4] (split-with #(> 0 (first (second %))) ts2)
-        ff2 (fn [[id [off act]]]
-              [id (case act 
-                    :set true 
-                    :reset false
-                    nil)])
-        ts5 (map ff2 ts3)
-        ff3 (fn [[id value]]
-              [(str (inc (Integer/parseInt id))) (not value)])
-        ts6 (map ff3 ts5) 
-        m (into {} (concat ts5 ts6))
-        ctx2 (update-context ctx m)
-        ]
-    (assoc ctx2 :timers (into {} ts4))))
-
 (defn get-clock-value-in-this-cycle [ctx block]
   (let [T (get-block-input-value ctx block "T")
         t (get ctx :clock 0.0)]
@@ -779,16 +754,23 @@
                       offset (int (/ dt t))
                       diid (get-block-input-link ctx block "DI")
                       di0 (get-block-value ctx diid 0)
-                      di1 (get-block-value ctx diid 1)
-                      bid (Integer/parseInt (:block-id block))
-                      do1id (str bid)
-                      do2id (str (inc bid))
-                      last-v (get-current-block-value ctx do1id 1)
+                      di1 (get-block-value ctx diid 1 true)
+                      bid (:block-id block)
+                      do1id bid
+                      do2id (str (inc (Integer/parseInt bid)))
+                      st (get-block-state ctx bid)
+                      tc (get st "DT" 0)
                       ]
                   (case [di1 di0]
-                    [false true] (let [ctx2 (schedule-timer ctx do1id offset :reset)]
-                                   (update-context ctx2 {do1id true do2id false}))
-                    (update-context ctx {do1id last-v do2id (not last-v)}))))
+                    [false true] (let [ctx2 (update-context ctx {do1id true do2id false})]
+                                   (set-block-state ctx2 bid {"DT" 1}))
+                    (if (== tc 0)
+                      (update-context ctx {do1id false do2id true})
+                      (if (>= tc offset)
+                        (let [ctx2 (update-context ctx {do1id false do2id true})]
+                          (set-block-state ctx2 bid {"DT" 0}))
+                        (let [ctx2 (update-context ctx {do1id true do2id false})]
+                          (set-block-state ctx2 bid {"DT" (inc tc)})))))))
     }
    {:type-name "延时通"
     :inputs [ {:name "DT" :desc "延时时间" :type :real :default 10.0
@@ -810,16 +792,20 @@
                       st (get-block-state ctx bid)
                       tc (get st "DT" 0)
                       ]
-                  (if di0
-                    (if di1 
-                      (if (== tc offset)
-                        (update-context ctx {do1id true do2id false})
-                        (set-block-state ctx bid {"DT" (inc tc)}))
-                      (set-block-state ctx bid {"DT" 1}))
-                    (let [ctx2 (update-context ctx {do1id false do2id true})]
-                      (set-block-state ctx2 bid {"DT" 0})))
-                  ))
+                  (case [di1 di0]
+                    [true true] (if (>= tc offset)
+                                  (update-context ctx {do1id true do2id false})
+                                  (let [ctx2 (update-context ctx {do1id false do2id true})]
+                                    (set-block-state ctx2 bid {"DT" (inc tc)})))
+                    [false true] (let [ctx2 (update-context ctx {do1id false do2id true})]
+                                   (set-block-state ctx2 bid {"DT" 1}))
+                    [false false] (let [ctx2 (update-context ctx {do1id false do2id true})]
+                                    (set-block-state ctx2 bid {"DT" 0}))
+                    [true false] (let [ctx2 (update-context ctx {do1id false do2id true})]
+                                    (set-block-state ctx2 bid {"DT" 0}))
+                    )))
     }
+   
    {:type-name "延时断"
     :inputs [ {:name "DT" :desc "延时时间" :type :real :default 10.0
                :min-value 0.0 :max-value 1000.0}
@@ -840,17 +826,20 @@
                       st (get-block-state ctx bid)
                       tc (get st "DT" 0)
                       ]
-                  (if di0
-                    (let [ctx2 (update-context ctx {do1id true do2id false})]
-                      (set-block-state ctx2 bid {"DT" 0}))
-                    (if di1
-                      (set-block-state ctx2 bid {"DT" 1})
-                      (if (== tc offset)
-                        (update-context ctx {do1id false do2id true})
-                        (set-block-state ctx bid {"DT" (if (== tc 0) 
-                                                         0 
-                                                         (inc tc))}))))
-                  ))
+                  (case [di1 di0]
+                    [true true] (let [ctx2 (update-context ctx {do1id true do2id false})]
+                                  (set-block-state ctx2 bid {"DT" 0}))
+                    [true false] (let [ctx2 (update-context ctx {do1id true do2id false})]
+                                   (set-block-state ctx2 bid {"DT" 1}))
+                    [false true] (let [ctx2 (update-context ctx {do1id true do2id false})]
+                                   (set-block-state ctx2 bid {"DT" 0}))
+                    [false false] (if (== tc 0)
+                                    (update-context ctx {do1id false do2id true})
+                                    (if (>= tc offset)
+                                      (update-context ctx {do1id false do2id true})
+                                      (let [ctx2 (update-context ctx {do1id true do2id false})]
+                                        (set-block-state ctx2 bid {"DT" (inc tc)}))))
+                    )))
     }
    {:type-name "模拟量迟延"
     :inputs [ {:name "DT" :desc "迟延时间" :type :real :default 1.0

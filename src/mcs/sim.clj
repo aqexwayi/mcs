@@ -36,7 +36,6 @@
             :blocks-state {}
             :ai ai
             :di di
-            :timers {}
             :schedule-time (System/currentTimeMillis)
             }
         sc-new (merge sc cfg)
@@ -64,8 +63,7 @@
 
 (defn execute-blocks [context blocks]
   (let [ctx2 (reduce execute-block context (bs/sort-by-id blocks)) 
-        ctx3 (bc/run-timer ctx2)
-        ctx4 (run-clock ctx3)
+        ctx4 (run-clock ctx2)
         ;; _ (println (first (:blocks-value ctx4)))
         ]
     (if (> (count (:blocks-value ctx4)) (:buffer-length @simulation-context))
@@ -99,7 +97,8 @@
         (if (controller-working?)
           (let [t2 (System/currentTimeMillis)
                 tw (Date.)
-                _ (println "time=" (- t2 t0))]
+                ;;_ (println "time=" (- t2 t0))
+                ]
             (db/write-data-with-time! tw (merge d1 d6))
             (if (> *debug-level* 0)
               (let [t3 (System/currentTimeMillis)]
