@@ -860,7 +860,7 @@
     :inputs [ {:name "PV" :desc "被调量" :type :real :default 0.0}
               {:name "SP" :desc "设定值" :type :real :default 0.0}
               {:name "TR" :desc "被跟踪量" :type :real :default 0.0}
-              {:name "TS" :desc "跟踪标志" :type :bool :default false}
+              {:name "TS" :desc "跟踪标志" :type :bool :default true}
               {:name "KP" :desc "比例增益" :type :real :default 5.0
                :min-value 0.0}
               {:name "TI" :desc "积分时间" :type :real :default 100.0
@@ -895,7 +895,7 @@
               {:name "DT" :desc "延时时间" :type :real :default 40.0
                :min-value 0.0 :max-value 600.0 }
               ]
-    :outputs [ :real ]
+    :outputs [ :bool ]
     :function  (fn [ctx block]
                  (let [bid (:block-id block)
                        t (:interval ctx)

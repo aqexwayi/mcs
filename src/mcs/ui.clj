@@ -161,6 +161,7 @@
 
 (defn input-parameter-dlg [para]
   (let [cv (str (:value para))
+        sr (sim/simulation-running?)
         items ["参数名称" (:name para) (seesaw.forms/next-line)
                "参数类型" (:type para) (seesaw.forms/next-line)
                "参数值" (if (= (:type para) :bool)
@@ -171,22 +172,23 @@
                (checkbox :id :link :selected? (:link para)) "使用外部连线"
                (seesaw.forms/next-line)
                "外部连线编号" (text :id :link-block-id :text (:link-block-id para))
-               ]]
-    (->
-     (dialog :id :input-parameter-dlg
-             :title "修改功能块参数"
-             :success-fn (fn [p]
-                           [(text (select (to-frame p) [:#value]))
-                            (selection (select (to-frame p) [:#link]))
-                            (text (select (to-frame p) [:#link-block-id]))])
-             :cancel-fn (fn [p] nil)
-             :option-type :ok-cancel
-             :content (seesaw.forms/forms-panel 
-                       "right:pref,10dlu,120dlu,10dlu,pref"
-                       :items items))
-     pack!
-     center-dialog!
-     show!)))
+               ]
+        dlg (dialog :id :input-parameter-dlg
+                    :title "修改功能块参数"
+                    :success-fn (fn [p]
+                                  [(text (select (to-frame p) [:#value]))
+                                   (selection (select (to-frame p) [:#link]))
+                                   (text (select (to-frame p) [:#link-block-id]))])
+                    :cancel-fn (fn [p] nil)
+                    :option-type :ok-cancel
+                    :content (seesaw.forms/forms-panel 
+                              "right:pref,10dlu,120dlu,10dlu,pref"
+                              :items items))
+        ]
+    (do
+      (config! (select dlg [:#link-block-id]) :enabled? (not sr))
+      (config! (select dlg [:#link]) :enabled? (not sr))
+      (-> dlg pack! center-dialog! show!))))
 
 (defn edit-block-parameter [e]
   (let [table (select main-panel [:#block-parameter-table])
@@ -355,29 +357,33 @@
      show!)))
 
 (defn action-add-data-point [table-id]
-  (let [[data-point block-id] (add-data-point-dlg)]
-    (if (nil? data-point)
-      (alert main-frame "取消添加数据点")
-      (if (dp/add-data-point! table-id data-point block-id)
-        (repaint! main-panel)
-        (alert main-frame "由于参数不正确无法添加数据点")))))
+  (if (sim/simulation-running?)
+    (alert main-frame "运行中不能修改数据点")
+    (let [[data-point block-id] (add-data-point-dlg)]
+      (if (nil? data-point)
+        (alert main-frame "取消添加数据点")
+        (if (dp/add-data-point! table-id data-point block-id)
+          (repaint! main-panel)
+          (alert main-frame "由于参数不正确无法添加数据点"))))))
 
 (defn action-delete-data-point [table-id table-name]
-  (if (-> (dialog :option-type :ok-cancel
-                  :content "你确定要删除选中的数据点吗？")
-          pack!
-          center-dialog!
-          show!)
-    (let [table (select main-panel [table-name])
-          rows (selection table {:multi? true})]
-      (if (nil? rows)
-        (alert main-frame "数据点无法删除！")
-        (let [dps (doall (map #(.getValueAt table % 0) rows))]
-          (do
-            (println "delete-data-point:" dps)
-            (dp/delete-data-points! table-id dps)
-            (selection! table nil)
-            (repaint! main-panel)))))))
+  (if (sim/simulation-running?)
+    (alert main-frame "运行中不能修改数据点")
+    (if (-> (dialog :option-type :ok-cancel
+                    :content "你确定要删除选中的数据点吗？")
+            pack!
+            center-dialog!
+            show!)
+      (let [table (select main-panel [table-name])
+            rows (selection table {:multi? true})]
+        (if (nil? rows)
+          (alert main-frame "数据点无法删除！")
+          (let [dps (doall (map #(.getValueAt table % 0) rows))]
+            (do
+              (println "delete-data-point:" dps)
+              (dp/delete-data-points! table-id dps)
+              (selection! table nil)
+              (repaint! main-panel))))))))
 
 (defn action-add-AI [e]
   (action-add-data-point :AI))
