@@ -77,9 +77,9 @@
        (if (nil? v)
          (let [v (get-block-default-value ctx block-id)]
            (if (nil? v)
-             (if (some #{block-id} (:di ctx))
+             (if (some #{block-id} (:di-blocks ctx))
                false
-               (if (some #{block-id} (:ai ctx))
+               (if (some #{block-id} (:ai-blocks ctx))
                  0.0
                  nil))
              v))
@@ -1036,5 +1036,4 @@
     :outputs [:real]
     :function dmc}
    ])
-
 

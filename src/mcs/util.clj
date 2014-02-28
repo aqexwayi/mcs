@@ -1,6 +1,8 @@
 (ns mcs.util
   (:require [clojure.string]))
 
+(def system-exception (atom nil))
+
 (defn indices-of [f coll]
   (keep-indexed #(if (f %2) %1 nil) coll))
 

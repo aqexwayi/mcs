@@ -1,4 +1,5 @@
 (ns mcs.sim
+  (:require [clojure.set])
   (:require [mcs.util :as util])
   (:require [mcs.db :as db])
   (:require [mcs.dp :as dp])
@@ -26,17 +27,23 @@
   (:running @simulation-context))
 
 (defn simulation-turn-on! [cfg]
-  (let [ai (map second @(:AI dp/data-point-tables))
-        di (map second @(:DI dp/data-point-tables))
+  (let [m1 (dp/table2map @(:AI dp/data-point-tables))
+        m2 (dp/table2map @(:DI dp/data-point-tables))
+        mi (merge m1 m2)
+        m3 (dp/table2map @(:AO dp/data-point-tables))
+        m4 (dp/table2map @(:DO dp/data-point-tables))
+        mo (util/swap-key-value (merge m3 m4))
         sc {:running true
             :clock 0
             :buffer-length 500
             :blocks @bs/blocks
             :blocks-value ()
             :blocks-state {}
-            :ai ai
-            :di di
+            :ai-blocks (map second @(:AI dp/data-point-tables)) ;; ai block-id list
+            :di-blocks (map second @(:DI dp/data-point-tables)) ;; di block-id list
             :schedule-time (System/currentTimeMillis)
+            :name-to-block-table mi
+            :block-to-name-table mo
             }
         sc-new (merge sc cfg)
         ]
@@ -70,26 +77,44 @@
       (drop-last-blocks ctx4)
       ctx4)))
 
+(defn- check-dp [tag meta-table]
+  (let [names (set (map first @(tag dp/data-point-tables)))
+        tn (subs (str tag) 1)
+        meta-names (set (map :_id (filter #(= (:type %) tn) meta-table)))]
+    (if (clojure.set/subset? names meta-names)
+      true
+      (do 
+        (let [s (str "有数据点不在META表中！ [" tn "] [" names "] [" meta-names "]")]
+          ;; (println tn ";" names ";" meta-names)
+          (db/write-log s)
+          (reset! util/system-exception s))
+        false))))
+
+(defn check-meta-table []
+  (let [mt (db/read-meta)]
+    (and (check-dp :AI mt)
+         (check-dp :DI mt)
+         (check-dp :AO mt)
+         (check-dp :DO mt))))
+
 (defn one-step []
   (let [t0 (System/currentTimeMillis)
         d1 (db/read!)
         t1 (System/currentTimeMillis)
         d2 (util/map-key-from-keyword-to-string d1)
-        m1 (dp/table2map @(:AI dp/data-point-tables))
-        m2 (dp/table2map @(:DI dp/data-point-tables))
-        mi (merge m1 m2)
+        mi (:name-to-block-table @simulation-context)
         d3 (util/map-key-by-map d2 mi)]
     (if (< (count d3) (count mi))
       (do 
-        (println "can't get AI/DI from database!")
+        (let [s "不能从数据库中读取AI/DI变量!"]
+          (db/write-log s)
+          (reset! util/system-exception s))
         false)
       (let [ctx1 @simulation-context
             ctx2 (push-blocks ctx1 d3)
             ctx3 (execute-blocks ctx2 @bs/blocks)
             d4 (first (:blocks-value ctx3))
-            m3 (dp/table2map @(:AO dp/data-point-tables))
-            m4 (dp/table2map @(:DO dp/data-point-tables))
-            mo (util/swap-key-value (merge m3 m4))
+            mo (:block-to-name-table @simulation-context)
             d5 (util/map-key-by-map d4 mo)
             d6 (util/map-key-from-string-to-keyword d5)
             ]
@@ -132,7 +157,10 @@
                     (Thread/sleep 50))
                   (Thread/sleep 50)))
               (if (db/connect! @simulation-context)
-                (swap! simulation-context #(assoc % :db-connected? true))
+                (do
+                  (swap! simulation-context #(assoc % :db-connected? true))
+                  (if (not (check-meta-table))
+                    (simulation-turn-off!)))
                 (do 
                   (simulation-turn-off!)))))
           (do

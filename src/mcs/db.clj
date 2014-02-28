@@ -71,3 +71,14 @@
 (defn write-debug-info-with-time! [date data]
   (let [d (merge {:_id date} data)]
     (monger.collection/insert "DEBUGINFO" d)))
+
+(defn write-log [log]
+  (monger.collection/insert "LOG" {:_id (Date.) :log log}))
+
+;;
+;; META TABLE FORMAT
+;; ({:_id "x1", :addr "40000", :max "10", :min "-10", :type "AO"})
+;; If META TABLE not found , return ()
+;;
+(defn read-meta []
+  (monger.collection/find-maps "META" {}))

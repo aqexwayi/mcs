@@ -112,7 +112,7 @@
           (alert main-frame "功能块无法删除！")
           (let [ids (doall (map #(.getValueAt table % 0) rows))]
             (do
-              (println "delete blocks:" ids)
+              ;; (println "delete blocks:" ids)
               (bs/delete-blocks ids)
               (selection! table nil)
               (reset! bs/current-block nil)
@@ -380,7 +380,7 @@
           (alert main-frame "数据点无法删除！")
           (let [dps (doall (map #(.getValueAt table % 0) rows))]
             (do
-              (println "delete-data-point:" dps)
+              ;; (println "delete-data-point:" dps)
               (dp/delete-data-points! table-id dps)
               (selection! table nil)
               (repaint! main-panel))))))))
@@ -635,7 +635,7 @@
    (dialog :content (vertical-panel 
                      :items ["组态仿真软件"
                              "@北京华电万通科技有限公司"
-                             "版本：0.7"
+                             "版本：0.9"
                              "2013 HDWT"]
                      )
            :type :info)
@@ -750,6 +750,10 @@
       (.setEnabled menu-item-scada-start true)
       (.setEnabled menu-item-scada-stop false)
       ))
+  (if (not (nil? @util/system-exception))
+    (do
+      (alert main-frame @util/system-exception)
+      (reset! util/system-exception nil)))
   (repaint! main-panel))
 
 (defn -main [& args]
