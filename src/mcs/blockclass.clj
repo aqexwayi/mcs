@@ -240,6 +240,26 @@
         ]
     (update-context ctx2 {bid v})))
 
+(defn differential2 [ctx block]
+  (let [rid (get-block-input-link ctx block "AI")
+        bid (:block-id block)
+        dt (:interval ctx)
+        Td (util/not-zero (get-block-input-value ctx block "TD"))
+        Kd (get-block-input-value ctx block "KD")
+        r0 (get-block-value ctx rid 0)
+        r1 (get-block-value ctx rid 1)
+        r2 (get-block-value ctx rid 2)
+        c1 (or (get-block-state ctx bid)
+               (get-block-default-value ctx bid))
+        e (Math/pow Math/E (* -1.0 2.0 (/ dt Td)))
+        c0 (+ (* e c1) (* Kd (- r0 r2)))
+        ctx2 (set-block-state ctx bid c0)
+        h (get-block-input-value ctx block "H")
+        l (get-block-input-value ctx block "L")
+        v (util/limit-value c0 l h)
+        ]
+    (update-context ctx2 {bid v})))
+
 (defn parse-num-den [num den]
   (let [n (dec (count den))
         num+ (reverse (take (inc n) (concat (reverse num) (repeat 0))))
@@ -555,6 +575,17 @@
               ]
     :outputs [ :real ]
     :function differential
+    }
+   {:type-name "微分2"
+    :inputs [ {:name "TD" :desc "微分时间" :type :real :default 10.0 }
+              {:name "KD" :desc "微分增益" :type :real :default 8.0 }
+              {:name "H" :desc "输出高限" :type :real :default 100.0 }
+              {:name "L" :desc "输出低限" :type :real :default -100.0 }
+              {:name "AI" :desc "AI" :type :real :default 0.0
+               :link true :link-block-id "0" }
+              ]
+    :outputs [ :real ]
+    :function differential2
     }
    {:type-name "速率限制"
     :inputs [ {:name "UV" :desc "升速率" :type :real :default 100.0
@@ -906,8 +937,9 @@
                        dt (get-block-input-value ctx block "DT")
                        ai0 (get-block-value ctx iid 0)
                        ai1 (get-block-value ctx iid 1)
+                       ai2 (get-block-value ctx iid 2)
                        dtc (dec (or (get-block-state ctx bid) 0.0))
-                       r (/ (- ai0 ai1) t)
+                       r (/ (- ai0 ai2) (* 2.0 t))
                        ]
                    (if (< (- rl) r rl)
                      (if (<= dtc 0.0)
