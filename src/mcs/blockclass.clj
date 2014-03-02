@@ -499,6 +499,12 @@
                             [(str (+ idx bid)) v]) res)]
       (update-context ctx (into {} ps)))))
 
+(defn wrap-math-2 [f]
+  (wrap (fn [ctx block]
+          (let [ai1 (get-block-input-value ctx block "AI1")
+                ai2 (get-block-input-value ctx block "AI2")]
+            [(f ai1 ai2)]))))
+
 (def block-classes
   [{:type-name "函数发生器"
     :inputs [ {:name "AI" :desc "AI输入" :type :real :default 0.0 
@@ -991,6 +997,18 @@
                             ai3 (get-block-input-value ctx block "AI3")
                             v (second (sort [ai1 ai2 ai3]))]
                         [v])))
+    }
+   {:type-name "二值选小"
+    :inputs [ {:name "AI1" :desc "AI1" :type :real :default 0.0}
+              {:name "AI2" :desc "AI2" :type :real :default 0.0}]
+    :outputs [:real]
+    :function (wrap-math-2 min)
+    }
+   {:type-name "二值选大"
+    :inputs [ {:name "AI1" :desc "AI1" :type :real :default 0.0}
+              {:name "AI2" :desc "AI2" :type :real :default 0.0}]
+    :outputs [:real]
+    :function (wrap-math-2 max)
     }
    {:type-name "反馈值"
     :inputs [ {:name "AI" :desc "输入块" :type :real :default 0.0 :mode :link
