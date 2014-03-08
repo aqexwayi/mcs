@@ -251,12 +251,12 @@
         r2 (get-block-value ctx rid 2)
         c1 (or (get-block-state ctx bid)
                (get-block-default-value ctx bid))
-        e (Math/pow Math/E (* -1.0 2.0 (/ dt Td)))
-        c0 (+ (* e c1) (* Kd (- r0 r2)))
+        e (Math/pow Math/E (* -1.0 (/ dt Td)))
+        c0 (+ (* e c1) (* Kd (- r0 r1)))
         ctx2 (set-block-state ctx bid c0)
         h (get-block-input-value ctx block "H")
         l (get-block-input-value ctx block "L")
-        v (util/limit-value c0 l h)
+        v (util/limit-value (/ (+ c0 c1) 2.0) l h)
         ]
     (update-context ctx2 {bid v})))
 
@@ -555,7 +555,7 @@
                :min-value 0.0 }
               {:name "K" :desc "增益" :type :real :default 1.0 }
               {:name "AI" :desc "AI" :type :real :default 0.0
-               :link true :link-block-id "0" }
+               :link true :link-block-id "0" :mode :link}
               ]
     :outputs [ :real ]
     :function (wrap lag)
@@ -566,7 +566,7 @@
               {:name "TS" :desc "跟踪标志" :type :bool :default false
                :link true :link-block-id 0 :change-online false}
               {:name "AI" :desc "AI" :type :real :default 0.0
-               :link true :link-block-id "0" }
+               :link true :link-block-id "0" :mode :link}
               ]
     :outputs [ :real ]
     :function (wrap lag2)
