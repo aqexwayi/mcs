@@ -1,4 +1,5 @@
 (ns mcs.check 
+  (:require [mcs.util :as util])
   (:require [mcs.dp :as dp])
   (:require [mcs.blocks :as bs])
   (:require [mcs.blockclass :as bc]))
@@ -49,8 +50,10 @@
                             [name (map :block-id error-blocks)])))
         r (first (filter coll? rs))]
     (if (nil? r)
-      "" ;; OK 
-      (str (first r) ":" (second r)))))
+      true
+      (let [s (str (first r) ":" (second r))]
+        (reset! util/system-exception s)
+        false))))
 
 (defn check-ao-link-type [blocks]
   (let [ty-map (apply merge (map bs/get-block-outputs-type blocks))
@@ -76,11 +79,15 @@
         ]
     (filter error-do? dos)))
 
-(defn check-dp [blocks]
+(defn check-data-points [blocks]
   (let [r (check-ao-link-type blocks)]
     (if (empty? r)
       (let [r (check-do-link-type blocks)]
         (if (empty? r)
-          "" ;; OK
-          (str "开关量数据输出类型错误:" (first r))))
-      (str "模拟量数据输出类型错误:" (first r)))))
+          true
+          (let [s (str "开关量" (nfirst r) "与功能块" (ffirst r) "类型不一致！")]
+            (reset! util/system-exception s)
+            false)))
+      (let [s (str "模拟量" (nfirst r) "与功能块" (ffirst r) "类型不一致！")]
+        (reset! util/system-exception s)
+        false))))

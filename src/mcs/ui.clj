@@ -606,17 +606,15 @@
     (alert main-frame "组态系统已经在运行！")
     (if (empty? @bs/blocks)
       (alert main-frame "组态工程为空！")
-      (let [r (check/check-blocks @bs/blocks)]
-        (if (empty? r) 
-          (let [r (check/check-dp @bs/blocks)]
-            (if (empty? r) 
-             (if-let [nc (scada-config-dlg)]
-               (do
-                 (save-and-backup-current-project!)
-                 (reset! scada-config nc)
-                 (sim/simulation-turn-on! nc)))
-             (alert main-frame r)))
-          (alert main-frame r))))))
+      (if (check/check-blocks @bs/blocks) 
+        (if (check/check-data-points @bs/blocks)
+          (if-let [nc (scada-config-dlg)]
+            (do
+              (save-and-backup-current-project!)
+              (reset! scada-config nc)
+              (sim/simulation-turn-on! nc)))
+          (alert main-frame @util/system-exception))
+        (alert main-frame @util/system-exception)))))
 
 (defn scada-stop! [e]
   (if (sim/simulation-running?)
@@ -636,10 +634,10 @@
 (defn show-about-dialog [e]
   (->
    (dialog :content (vertical-panel 
-                     :items ["组态仿真软件"
+                     :items ["组态软件"
                              "@北京华电万通科技有限公司"
                              "版本：0.9"
-                             "2013 HDWT"]
+                             "2013-2014 HDWT"]
                      )
            :type :info)
    pack!

@@ -543,9 +543,10 @@
               {:name "RATE" :desc "输出限速" :type :real :default 1.0
                :link false :link-block-id "0" }
               {:name "TS" :desc "跟踪标志" :type :bool :default false
-               :link false :link-block-id "0" :change-online false}
+               :link false :link-block-id "0" :change-online false
+               }
               {:name "AI" :desc "AI" :type :real :default 0.0
-               :link true :link-block-id "0" }
+               :link true :link-block-id "0" :mode :link}
               ]
     :outputs [ :real ]
     :function lead-lag
@@ -577,7 +578,7 @@
               {:name "H" :desc "输出高限" :type :real :default 100.0 }
               {:name "L" :desc "输出低限" :type :real :default -100.0 }
               {:name "AI" :desc "AI" :type :real :default 0.0
-               :link true :link-block-id "0" }
+               :link true :link-block-id "0" :mode :link}
               ]
     :outputs [ :real ]
     :function differential
@@ -588,7 +589,7 @@
               {:name "H" :desc "输出高限" :type :real :default 100.0 }
               {:name "L" :desc "输出低限" :type :real :default -100.0 }
               {:name "AI" :desc "AI" :type :real :default 0.0
-               :link true :link-block-id "0" }
+               :link true :link-block-id "0" :mode :link}
               ]
     :outputs [ :real ]
     :function differential2
@@ -600,7 +601,7 @@
                :min-value 0.0 }
               {:name "TS" :desc "跟踪标志" :type :bool :default false }
               {:name "AI" :desc "AI" :type :real :default 0.0
-               :link true :link-block-id "0" }
+               :link true :link-block-id "0" :mode :link}
               ]
     :outputs [ :real ]
     :function (wrap limit-change-rate)

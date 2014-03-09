@@ -84,8 +84,8 @@
     (if (clojure.set/subset? names meta-names)
       true
       (do 
-        (let [s (str "有数据点不在META表中！ [" tn "] " names)]
-          ;; (println tn ";" names ";" meta-names)
+        (let [n (clojure.set/difference names meta-names)
+              s (str "数据点" (seq n) "不在META表(" tn ")中！" )]
           (db/write-log s)
           (reset! util/system-exception s))
         false))))
@@ -106,7 +106,8 @@
         d3 (util/map-key-by-map d2 mi)]
     (if (< (count d3) (count mi))
       (do 
-        (let [s "不能从数据库中读取AI/DI变量!"]
+        (let [ps (clojure.set/difference (set (keys mi)) (set (keys d2)))
+              s (str "不能从数据库中读取变量" (first (seq ps)) "!")]
           (db/write-log s)
           (reset! util/system-exception s))
         false)
