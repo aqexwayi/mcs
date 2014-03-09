@@ -10,7 +10,7 @@
                  [rhizome "0.2.0"]
                  ]
   :omit-source true
-  :aot [mcs.ui]
+  :aot :all 
   :main mcs.ui
   )
 

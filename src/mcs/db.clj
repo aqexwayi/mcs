@@ -75,6 +75,9 @@
 (defn write-log [log]
   (monger.collection/insert "LOG" {:_id (Date.) :log log}))
 
+(defn write-project [prj]
+  (monger.collection/insert "PROJECT" {:_id (Date.) :prj (str prj)}))
+
 ;;
 ;; META TABLE FORMAT
 ;; ({:_id "x1", :addr "40000", :max "10", :min "-10", :type "AO"})
