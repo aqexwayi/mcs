@@ -100,7 +100,7 @@
 
 (defn action-delete-block [e]
   (if (sim/simulation-running?)
-    (alert main-frame "仿真运行中不能删除功能块")
+    (alert main-frame "运行中不能删除功能块")
     (if (-> (dialog :option-type :ok-cancel
                     :content "你确定要删除选中的功能块吗？")
             pack!
@@ -606,14 +606,17 @@
     (alert main-frame "组态系统已经在运行！")
     (if (empty? @bs/blocks)
       (alert main-frame "组态工程为空！")
-      (let [r (check/check @bs/blocks)]
-        (if (empty? r)
-          (if-let [nc (scada-config-dlg)]
-            (do
-              (save-and-backup-current-project!)
-              (reset! scada-config nc)
-              (sim/simulation-turn-on! nc)))
-          (alert main-frame (str (ffirst r) (nfirst r))))))))
+      (let [r (check/check-blocks @bs/blocks)]
+        (if (empty? r) 
+          (let [r (check/check-dp @bs/blocks)]
+            (if (empty? r) 
+             (if-let [nc (scada-config-dlg)]
+               (do
+                 (save-and-backup-current-project!)
+                 (reset! scada-config nc)
+                 (sim/simulation-turn-on! nc)))
+             (alert main-frame r)))
+          (alert main-frame r))))))
 
 (defn scada-stop! [e]
   (if (sim/simulation-running?)

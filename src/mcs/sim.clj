@@ -84,7 +84,7 @@
     (if (clojure.set/subset? names meta-names)
       true
       (do 
-        (let [s (str "有数据点不在META表中！ [" tn "] [" names "] [" meta-names "]")]
+        (let [s (str "有数据点不在META表中！ [" tn "] " names)]
           ;; (println tn ";" names ";" meta-names)
           (db/write-log s)
           (reset! util/system-exception s))
