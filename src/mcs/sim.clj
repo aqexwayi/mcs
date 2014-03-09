@@ -48,12 +48,7 @@
         sc-new (merge sc cfg)
         ]
     (reset! simulation-context sc-new)
-    (db/write-project [{}
-                       @bs/blocks 
-                       @(:AI dp/data-point-tables)
-                       @(:AO dp/data-point-tables)
-                       @(:DI dp/data-point-tables)
-                       @(:DO dp/data-point-tables)])))
+    ))
 
 (defn simulation-turn-off! []
   (swap! simulation-context #(assoc % :running false)))
@@ -166,6 +161,12 @@
               (if (db/connect! @simulation-context)
                 (do
                   (swap! simulation-context #(assoc % :db-connected? true))
+                  (db/write-project [{}
+                                     @bs/blocks 
+                                     @(:AI dp/data-point-tables)
+                                     @(:AO dp/data-point-tables)
+                                     @(:DI dp/data-point-tables)
+                                     @(:DO dp/data-point-tables)])
                   (if (not (check-meta-table))
                     (simulation-turn-off!)))
                 (do 
