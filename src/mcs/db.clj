@@ -3,6 +3,7 @@
   (:require [monger core collection util query])
   (:use [monger operators])
   (:import [com.mongodb WriteConcern])
+  (:import [java.io IOException])
   (:import [java.util Date]))
 
 (defn get-meta-table []
@@ -10,10 +11,12 @@
 
 (defn connect! [db-config]
   (try
-    (monger.core/connect! db-config)
-    (monger.core/use-db! (:db-name db-config))
-    true
-    (catch Exception e false)))
+    (do
+      (monger.core/connect! db-config)
+      (monger.core/use-db! (:db-name db-config))
+      true)
+    (catch Exception _
+      false)))
 
 (defn disconnect! []
   (monger.core/disconnect!))

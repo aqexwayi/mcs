@@ -170,6 +170,7 @@
                   (if (not (check-meta-table))
                     (simulation-turn-off!)))
                 (do 
+                  (reset! util/system-exception (str "无法连接数据库！"))
                   (simulation-turn-off!)))))
           (do
             (if (:db-connected? @simulation-context)

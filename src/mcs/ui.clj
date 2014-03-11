@@ -613,8 +613,7 @@
               (save-and-backup-current-project!)
               (reset! scada-config nc)
               (sim/simulation-turn-on! nc)))
-          (alert main-frame @util/system-exception))
-        (alert main-frame @util/system-exception)))))
+          )))))
 
 (defn scada-stop! [e]
   (if (sim/simulation-running?)

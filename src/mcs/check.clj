@@ -47,7 +47,7 @@
                         (let [error-blocks (f blocks)]
                           (if (empty? error-blocks)
                             nil
-                            [name (map :block-id error-blocks)])))
+                            [name (first (map :block-id error-blocks))])))
         r (first (filter coll? rs))]
     (if (nil? r)
       true
