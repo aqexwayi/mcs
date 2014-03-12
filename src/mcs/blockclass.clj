@@ -1085,6 +1085,21 @@
               :min-value 0.1 :max-value 2.0}
              ]
     :outputs [:real]
-    :function dmc}
+    :function dmc
+    }
+   {:type-name "脉冲计数器"
+    :inputs [ {:name "DI" :desc "DI" :type :bool :default false :mode :link 
+               :link true :link-block-id "0"} ]
+    :outputs [:real]
+    :function (fn [ctx block]
+                (let [bid (:block-id block)
+                      diid (get-block-input-link ctx block "DI")
+                      di0 (get-block-value ctx diid 0)
+                      di1 (get-block-value ctx diid 1 true)
+                      c (get-current-block-value ctx bid 1)]
+                  (case [di1 di0]
+                    [false true] (update-context ctx {bid (inc c)})
+                    (update-context ctx {bid c}))))
+    }
    ])
 
