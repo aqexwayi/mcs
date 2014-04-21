@@ -87,7 +87,7 @@
       (do 
         (let [n (clojure.set/difference names meta-names)
               s (str "数据点" (seq n) "不在META表(" tn ")中！" )]
-          (db/write-log s)
+          (db/write-log! s)
           (reset! util/system-exception s))
         false))))
 
@@ -109,7 +109,7 @@
       (do 
         (let [ps (clojure.set/difference (set (keys mi)) (set (keys d2)))
               s (str "不能从数据库中读取变量" (first (seq ps)) "!")]
-          (db/write-log s)
+          (db/write-log! s)
           (reset! util/system-exception s))
         false)
       (let [ctx1 @simulation-context
@@ -129,7 +129,7 @@
             (db/write-data-with-time! tw (merge d1 d6))
             (if (> *debug-level* 0)
               (let [t3 (System/currentTimeMillis)]
-                (db/write-debug-info-with-time! tw d4)))))
+                (db/write-blocks! tw d4)))))
         true))))
 
 (defn simulate [exception-handler]
@@ -161,12 +161,12 @@
               (if (db/connect! @simulation-context)
                 (do
                   (swap! simulation-context #(assoc % :db-connected? true))
-                  (db/write-project [{}
-                                     @bs/blocks 
-                                     @(:AI dp/data-point-tables)
-                                     @(:AO dp/data-point-tables)
-                                     @(:DI dp/data-point-tables)
-                                     @(:DO dp/data-point-tables)])
+                  (db/write-project! [{}
+                                      @bs/blocks 
+                                      @(:AI dp/data-point-tables)
+                                      @(:AO dp/data-point-tables)
+                                      @(:DI dp/data-point-tables)
+                                      @(:DO dp/data-point-tables)])
                   (if (not (check-meta-table))
                     (simulation-turn-off!)))
                 (do 

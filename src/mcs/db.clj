@@ -14,6 +14,7 @@
     (do
       (monger.core/connect! db-config)
       (monger.core/use-db! (:db-name db-config))
+      (monger.collection/create "BLOCKS" {:capped true :max 3600})
       true)
     (catch Exception _
       false)))
@@ -71,14 +72,14 @@
 (defn write! [data]
   (write-data-with-time! (Date.) data))
 
-(defn write-debug-info-with-time! [date data]
+(defn write-blocks! [date data]
   (let [d (merge {:_id date} data)]
-    (monger.collection/insert "DEBUGINFO" d)))
+    (monger.collection/insert "BLOCKS" d)))
 
-(defn write-log [log]
+(defn write-log! [log]
   (monger.collection/insert "LOG" {:_id (Date.) :log log}))
 
-(defn write-project [prj]
+(defn write-project! [prj]
   (monger.collection/insert "PROJECT" {:_id (Date.) :prj (str prj)}))
 
 ;;

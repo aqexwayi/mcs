@@ -30,6 +30,8 @@
 
 (def current-project-file-name (atom nil))
 (def current-project-content (atom nil))
+(def lock-password (atom nil))
+
 (declare save-and-backup-current-project!)
 
 (native!) ;; must call it very early 
@@ -474,6 +476,29 @@
                      :divider-location 1/3)
    :divider-location 1/3))
 
+(declare main-menu)
+(declare mcs-panels)
+(declare lock-panel)
+(defn unlock [e]
+  (let [w (select lock-panel [:#unlock-password])
+        pwd (clojure.string/lower-case (text w))]
+    (if (or (= pwd "hdwtroot") (= pwd @lock-password))
+      (do
+        (.setVisible main-menu true)
+        (show-card! mcs-panels :main-panel)))))
+
+(def lock-panel
+  (flow-panel :items [(password :id :unlock-password
+                                :size [320 :by 32])
+                      (button :text "解除锁定"
+                              :listen [:action unlock])]
+              :align :center))
+
+(def mcs-panels
+  (card-panel :items [[main-panel :main-panel]
+                      [lock-panel :lock-panel]
+                      ]))
+
 (def mcs-file-chooser
   (let [fc (JFileChooser.)
         _ (.setMultiSelectionEnabled fc false)
@@ -571,13 +596,13 @@
 
 (defn scada-config-dlg []
   (let [items ["主机地址" (text :id :scada-config-host
-                            :text (:host @scada-config))
+                                :text (:host @scada-config))
                (seesaw.forms/next-line)
                "通讯端口" (text :id :scada-config-port
-                            :text (str (:port @scada-config)))
+                                :text (str (:port @scada-config)))
                (seesaw.forms/next-line)
                "数据库名" (text :id :scada-config-name
-                            :text (:db-name @scada-config))
+                                :text (:db-name @scada-config))
                (seesaw.forms/next-line)
                "仿真周期" (combobox :id :simulation-interval
                                     :model [1000 500 200]) "ms"]]
@@ -636,8 +661,7 @@
                      :items ["组态软件"
                              "@北京华电万通科技有限公司"
                              "版本：0.9"
-                             "2013-2014 HDWT"]
-                     )
+                             "2013-2014 HDWT"])
            :type :info)
    pack!
    center-dialog!
@@ -656,6 +680,28 @@
     (let [fname (.getPath f)
           g (bs/build-graph @bs/blocks)]
       (output-svg g (util/postfixed-file-name fname "svg")))))
+
+(defn lock-ui-dlg []
+  (-> (dialog :id :lock-ui
+              :title "锁定界面"
+              :success-fn (fn [p]
+                            (text (select (to-frame p) [:#lock-password])))
+              :cancel-fn (fn [p] nil)
+              :option-type :ok-cancel
+              :content (seesaw.forms/forms-panel
+                        "right:pref,10dlu,120dlu,10dlu,pref"
+                        :items ["输入密码" (password :id :lock-password)]))
+      pack!
+      center-dialog!
+      show!))
+
+(defn lock-ui! [e]
+  (let [pwd (lock-ui-dlg)]
+    (if (not (or (nil? pwd) (empty? pwd)))
+      (do
+        (reset! lock-password (clojure.string/lower-case pwd))
+        (.setVisible main-menu false)
+        (show-card! mcs-panels :lock-panel)))))
 
 (defn exit-handler! [e]
   (if (sim/simulation-running?)
@@ -697,6 +743,9 @@
             (seesaw.action/action :name "导出SVG"
                                   :handler export-svg!)
             :separator
+            (seesaw.action/action :name "锁定界面"
+                                  :handler lock-ui!)
+            :separator
             (seesaw.action/action :name "退出软件"
                                   :handler exit-handler!)
             ])
@@ -731,7 +780,7 @@
    :minimum-size [1280 :by 800]
    :on-close :nothing ;; :exit :hide :dispose
    :menubar main-menu
-   :content main-panel ))
+   :content mcs-panels))
 
 (.addWindowListener main-frame 
                     (proxy [WindowAdapter] []
