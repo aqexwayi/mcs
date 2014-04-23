@@ -14,10 +14,15 @@
     (do
       (monger.core/connect! db-config)
       (monger.core/use-db! (:db-name db-config))
-      (monger.collection/create "BLOCKS" {:capped true :max 3600})
+      (if (not (monger.collection/exists? "BLOCKS"))
+        (monger.collection/create "BLOCKS" {:capped true 
+                                            :size 3600000
+                                            :max 3600}))
       true)
-    (catch Exception _
-      false)))
+    (catch Exception e
+      (do
+        (println e)
+        false))))
 
 (defn disconnect! []
   (monger.core/disconnect!))

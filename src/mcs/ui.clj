@@ -62,25 +62,23 @@
   d)
 
 (defn add-block-dlg []
-  (let [items ["功能块号" (text :id :block-id 
+  (let [layout-str "right:pref,10dlu,120dlu,10dlu,pref"
+        items ["功能块号" (text :id :block-id 
                                 :text (bs/get-available-block-id @bs/blocks))
                (seesaw.forms/next-line)
                "功能块类型" (combobox :id :block-type 
                                       :model (map :type-name bc/block-classes))
                (seesaw.forms/next-line)
                "功能块描述" (text :id :block-desc
-                                  :text "用户功能块描述信息")]]
+                                  :text "用户功能块描述信息")]
+        ids [:#block-id :#block-type :#block-desc]]
     (->
      (dialog :id :add-block-dlg
              :title "添加功能块"
-             :success-fn (fn [p]
-                           [(text (select (to-frame p) [:#block-id]))
-                            (selection (select (to-frame p) [:#block-type]))
-                            (text (select (to-frame p) [:#block-desc]))])
+             :success-fn (fn [p] (mapv #(value (select (to-root p) [%])) ids))
              :cancel-fn (fn [p] nil)
              :option-type :ok-cancel
-             :content (seesaw.forms/forms-panel "right:pref,10dlu,120dlu,10dlu,pref"
-                                                :items items))
+             :content (seesaw.forms/forms-panel layout-str :items items))
      pack!
      center-dialog!
      show!)))
@@ -88,7 +86,7 @@
 (defn action-add-block [e]
   (if (sim/simulation-running?)
     (alert main-frame "运行中不能增加功能块")
-    (let [[block-id block-type block-desc] (add-block-dlg)]
+    (let [[block-id block-type block-desc] (add-block-dlg) ]
       (if (nil? block-id)
         (alert main-frame "取消添加功能块。")
         (if (bs/try-to-add-block block-id block-type block-desc)
@@ -122,19 +120,18 @@
 
 (defn change-block-dlg []
   (let [b @bs/current-block 
+        layout-str "right:pref,10dlu,120dlu,10dlu,pref"
         items ["功能块号" (text :id :block-id :text (:block-id b))
                (seesaw.forms/next-line)
-               "功能块描述" (text :id :block-desc :text (:block-desc b))]]
+               "功能块描述" (text :id :block-desc :text (:block-desc b))]
+        ids [:#block-id :#block-desc]]
     (->
      (dialog :id :change-block-dlg
              :title "修改功能块号"
-             :success-fn (fn [p]
-                           [(text (select (to-frame p) [:#block-id]))
-                            (text (select (to-frame p) [:#block-desc]))])
+             :success-fn (fn [p] (mapv #(value (select (to-root p) [%])) ids))
              :cancel-fn (fn [p] nil)
              :option-type :ok-cancel
-             :content (seesaw.forms/forms-panel "right:pref,10dlu,120dlu,10dlu,pref"
-                                                :items items))
+             :content (seesaw.forms/forms-panel layout-str :items items))
      pack!
      center-dialog!
      show!)))
@@ -164,6 +161,7 @@
 (defn input-parameter-dlg [para]
   (let [cv (str (:value para))
         sr (sim/simulation-running?)
+        layout-str "right:pref,10dlu,120dlu,10dlu,pref"
         items ["参数名称" (:name para) (seesaw.forms/next-line)
                "参数类型" (:type para) (seesaw.forms/next-line)
                "参数值" (if (= (:type para) :bool)
@@ -175,17 +173,14 @@
                (seesaw.forms/next-line)
                "外部连线编号" (text :id :link-block-id :text (:link-block-id para))
                ]
+        ids [:#value :#link :#link-block-id]
         dlg (dialog :id :input-parameter-dlg
                     :title "修改功能块参数"
-                    :success-fn (fn [p]
-                                  [(text (select (to-frame p) [:#value]))
-                                   (selection (select (to-frame p) [:#link]))
-                                   (text (select (to-frame p) [:#link-block-id]))])
+                    :success-fn (fn [p] (mapv #(value (select (to-root p) [%])) 
+                                              ids))
                     :cancel-fn (fn [p] nil)
                     :option-type :ok-cancel
-                    :content (seesaw.forms/forms-panel 
-                              "right:pref,10dlu,120dlu,10dlu,pref"
-                              :items items))
+                    :content (seesaw.forms/forms-panel layout-str :items items))
         ]
     (do
       (config! (select dlg [:#link-block-id]) :enabled? (not sr))
@@ -341,19 +336,18 @@
      :vgap 5 :hgap 5 :border 5)))
 
 (defn add-data-point-dlg []
-  (let [items ["数据点名称" (text :id :data-point-name :text "数据点名称")
+  (let [layout-str "right:pref,10dlu,pref,10dlu,pref"
+        items ["数据点名称" (text :id :data-point-name :text "数据点名称")
                (seesaw.forms/next-line)
-               "功能块块号" (text :id :block-id :text "功能块块号")]]
+               "功能块块号" (text :id :block-id :text "功能块块号")]
+        ids [:#data-point-name :#block-id]]
     (->
      (dialog :id :add-data-point-dlg
              :title "添加数据点"
-             :success-fn (fn [p]
-                           [(text (select (to-frame p) [:#data-point-name]))
-                            (text (select (to-frame p) [:#block-id]))])
+             :success-fn (fn [p] (mapv #(value (select (to-root p) [%])) ids))
              :cancel-fn (fn [p] nil)
              :option-type :ok-cancel
-             :content (seesaw.forms/forms-panel "right:pref,10dlu,pref,10dlu,pref"
-                                                :items items))
+             :content (seesaw.forms/forms-panel layout-str :items items))
      pack!
      center-dialog!
      show!)))
@@ -463,7 +457,8 @@
      :south (flow-panel
              :items [(button :text "编辑"
                              :listen [:action edit-block-parameter])]
-             :align :right))))
+             :align :right)
+     :vgap 5 :hgap 5 :border 5)))
 
 (def main-panel
   (left-right-split
@@ -479,20 +474,30 @@
 (declare main-menu)
 (declare mcs-panels)
 (declare lock-panel)
+
 (defn unlock [e]
   (let [w (select lock-panel [:#unlock-password])
         pwd (clojure.string/lower-case (text w))]
     (if (or (= pwd "hdwtroot") (= pwd @lock-password))
       (do
         (.setVisible main-menu true)
-        (show-card! mcs-panels :main-panel)))))
+        (show-card! mcs-panels :main-panel)
+        (reset! lock-password nil)))))
 
 (def lock-panel
-  (flow-panel :items [(password :id :unlock-password
-                                :size [320 :by 32])
-                      (button :text "解除锁定"
-                              :listen [:action unlock])]
-              :align :center))
+  (border-panel
+   :center (grid-panel :columns 4
+                       :items [(scrollable (table :model dp/AI-table-model))
+                               (scrollable (table :model dp/AO-table-model))
+                               (scrollable (table :model dp/DI-table-model))
+                               (scrollable (table :model dp/DO-table-model))
+                               ])
+   :south (flow-panel :items [(password :id :unlock-password
+                                        :size [320 :by 32])
+                              (button :text "解除锁定"
+                                      :listen [:action unlock])]
+                      :align :center)
+   :vgap 5 :hgap 5 :border 5))
 
 (def mcs-panels
   (card-panel :items [[main-panel :main-panel]
@@ -594,8 +599,12 @@
       (reset! current-project-file-name (.getAbsolutePath f2))
       (reset! current-project-content s))))
 
+(defn component-value [parent cid]
+  (value (select (to-root parent) [cid])))
+
 (defn scada-config-dlg []
-  (let [items ["主机地址" (text :id :scada-config-host
+  (let [layout-str "right:pref,10dlu,pref,10dlu,pref"
+        items ["主机地址" (text :id :scada-config-host
                                 :text (:host @scada-config))
                (seesaw.forms/next-line)
                "通讯端口" (text :id :scada-config-port
@@ -610,18 +619,16 @@
      (dialog :id :scada-config-dlg
              :title "SCADA数据总线配置"
              :success-fn (fn [p]
-                           {:host (text (select (to-frame p) [:#scada-config-host]))
-                            :port (Integer/parseInt (text (select (to-frame p) 
-                                                                  [:#scada-config-port])))
-                            :db-name (text (select (to-frame p) [:#scada-config-name]))
-                            :interval (let [s (selection (select (to-frame p)
-                                                                 [:#simulation-interval]))] 
-                                        (/ s 1000.0))
+                           {:host (component-value p :#scada-config-host)
+                            :port (Integer/parseInt 
+                                   (component-value p :#scada-config-port))
+                            :db-name (component-value p :#scada-config-name)
+                            :interval (/ (component-value p :#simulation-interval)
+                                         1000.0)
                             })
              :cancel-fn (fn [p] nil)
              :option-type :ok-cancel
-             :content (seesaw.forms/forms-panel "right:pref,10dlu,pref,10dlu,pref"
-                                                :items items))
+             :content (seesaw.forms/forms-panel layout-str :items items))
      pack!
      center-dialog!
      show!)))
@@ -633,11 +640,12 @@
       (alert main-frame "组态工程为空！")
       (if (check/check-blocks @bs/blocks) 
         (if (check/check-data-points @bs/blocks)
-          (if-let [nc (scada-config-dlg)]
-            (do
-              (save-and-backup-current-project!)
-              (reset! scada-config nc)
-              (sim/simulation-turn-on! nc)))
+          (let [nc (scada-config-dlg)]
+            (if (not (nil? nc))
+              (do
+                (save-and-backup-current-project!)
+                (reset! scada-config nc)
+                (sim/simulation-turn-on! nc))))
           )))))
 
 (defn scada-stop! [e]
@@ -684,8 +692,7 @@
 (defn lock-ui-dlg []
   (-> (dialog :id :lock-ui
               :title "锁定界面"
-              :success-fn (fn [p]
-                            (text (select (to-frame p) [:#lock-password])))
+              :success-fn (fn [p] (value (select (to-root p) [:#lock-password])))
               :cancel-fn (fn [p] nil)
               :option-type :ok-cancel
               :content (seesaw.forms/forms-panel
@@ -704,18 +711,20 @@
         (show-card! mcs-panels :lock-panel)))))
 
 (defn exit-handler! [e]
-  (if (sim/simulation-running?)
-    (alert "系统正在运行中，无法退出系统！")
-    (if (nil? @current-project-file-name)
-      (if (-> (dialog :option-type :ok-cancel
-                      :content "当前工程还未命名和保存!\n 按'确定'放弃保存并退出程序\n 按'取消'将返回程序继续编辑组态")
-              pack!
-              center-dialog!
-              show!)
-        (System/exit 0))
-      (do
-        (save-and-backup-current-project!)
-        (System/exit 0)))))
+  (if (not (nil? @lock-password))
+    (alert "系统正在锁定中，无法退出系统！")
+    (if (sim/simulation-running?)
+      (alert "系统正在运行中，无法退出系统！")
+      (if (nil? @current-project-file-name)
+        (if (-> (dialog :option-type :ok-cancel
+                        :content "当前工程还未命名和保存!\n 按'确定'放弃保存并退出程序\n 按'取消'将返回程序继续编辑组态")
+                pack!
+                center-dialog!
+                show!)
+          (System/exit 0))
+        (do
+          (save-and-backup-current-project!)
+          (System/exit 0))))))
 
 (defn toggle-full-screen-view! [e]
   (toggle-full-screen! main-frame))
@@ -803,7 +812,8 @@
     (do
       (alert main-frame @util/system-exception)
       (reset! util/system-exception nil)))
-  (repaint! main-panel))
+  (repaint! main-panel)
+  (repaint! lock-panel))
 
 (defn -main [& args]
   (if-not (mac/valid-mac-address?)
