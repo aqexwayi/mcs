@@ -93,3 +93,11 @@
     file-name
     (str file-name "." postfix)))
 
+(defn empty-string? [s]
+  (= "" (trim+ s)))
+
+(defn number-string? [s]
+  (try
+    (Integer/parseInt (clojure.string/trim s))
+    true
+    (catch Exception e false)))

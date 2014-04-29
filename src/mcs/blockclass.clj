@@ -508,7 +508,7 @@
 (def block-classes
   [{:type-name "函数发生器"
     :inputs [ {:name "AI" :desc "AI输入" :type :real :default 0.0 
-               :link true :link-block-id "0" }
+               :link true :link-block-id "0" :mode :link}
               {:name "N" :desc "函数分段数" :type :integer
                :change-online false
                :min-value 1 :max-value 10 :default 10 :used-as-array-size true}
@@ -614,9 +614,9 @@
               {:name "SW" :desc "切换开关" :type :bool :default false
                :link true :link-block-id 0 :change-online false}
               {:name "AI1" :desc "AI1" :type :real :default 0.0
-               :link true :link-block-id "0" }
+               :link true :link-block-id "0" :mode :link}
               {:name "AI2" :desc "AI2" :type :real :default 0.0
-               :link true :link-block-id "0" }
+               :link true :link-block-id "0" :mode :link}
               ]
     :outputs [ :real ]
     :function ai-switch
@@ -625,7 +625,7 @@
     :inputs [ {:name "H" :desc "高限幅" :type :real :default 100.0}
               {:name "L" :desc "低限幅" :type :real :default -100.0}
               {:name "AI" :desc "AI" :type :real :default 0.0
-               :link true :link-block-id "0" }
+               :link true :link-block-id "0" :mode :link}
               ]
     :outputs [ :real ]
     :function (wrap hl-limit)
@@ -634,7 +634,7 @@
     :inputs [ {:name "H" :desc "高限幅" :type :real :default 100.0}
               {:name "L" :desc "低限幅" :type :real :default -100.0}
               {:name "AI" :desc "AI" :type :real :default 0.0
-               :link true :link-block-id "0" }
+               :link true :link-block-id "0" :mode :link}
               ]
     :outputs [ :bool :bool]
     :function (wrap hl-alarm)

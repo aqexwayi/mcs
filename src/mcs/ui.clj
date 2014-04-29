@@ -89,13 +89,15 @@
     (let [[block-id block-type block-desc] (add-block-dlg) ]
       (if (nil? block-id)
         (alert main-frame "取消添加功能块。")
-        (if (bs/try-to-add-block block-id block-type block-desc)
-          (let [table (select main-panel [:#block-table])]
-            (bs/select-current-block block-id)
-            (selection! table (bs/get-block-row block-id))
-            (.invalidate table)
-            (repaint! main-panel))
-          (alert main-frame "由于参数不正确无法添加功能块！"))))
+        (if (not (util/number-string? block-id))
+          (alert main-frame "功能块号格式不正确！")
+          (if (bs/try-to-add-block block-id block-type block-desc)
+            (let [table (select main-panel [:#block-table])]
+              (bs/select-current-block block-id)
+              (selection! table (bs/get-block-row block-id))
+              (.invalidate table)
+              (repaint! main-panel))
+            (alert main-frame "由于参数不正确无法添加功能块！")))))
     ))
 
 (defn action-delete-block [e]
@@ -146,9 +148,11 @@
         (let [[block-id block-desc] (change-block-dlg)]
           (if (nil? block-id)
             (alert main-frame "取消修改！")
-            (if (bs/change-current-block-id-and-desc! block-id block-desc)
-              (repaint! main-panel)
-              (alert main-frame "块号不正确，无法修改！"))))))))
+            (if (not (util/number-string? block-id))
+              (alert main-frame "功能块号格式不正确！")
+              (if (bs/change-current-block-id-and-desc! block-id block-desc)
+                (repaint! main-panel)
+                (alert main-frame "块号不正确，无法修改！")))))))))
 
 (defn on-select-block [e]
   (let [table (select main-panel [:#block-table])
@@ -358,9 +362,12 @@
     (let [[data-point block-id] (add-data-point-dlg)]
       (if (nil? data-point)
         (alert main-frame "取消添加数据点")
-        (if (dp/add-data-point! table-id data-point block-id)
-          (repaint! main-panel)
-          (alert main-frame "由于参数不正确无法添加数据点"))))))
+        (if (or (util/empty-string? data-point) 
+                (not (util/number-string? block-id)))
+          (alert main-frame "输入内容格式不正确")
+          (if (dp/add-data-point! table-id data-point block-id)
+            (repaint! main-panel)
+            (alert main-frame "由于参数不正确无法添加数据点")))))))
 
 (defn action-delete-data-point [table-id table-name]
   (if (sim/simulation-running?)
@@ -484,13 +491,19 @@
         (show-card! mcs-panels :main-panel)
         (reset! lock-password nil)))))
 
+(defn make-dp-table-panel [title model]
+  (border-panel 
+   :north title
+   :center (scrollable (table :model model))
+   :vgap 5 :hgap 5 :border 5))
+
 (def lock-panel
   (border-panel
    :center (grid-panel :columns 4
-                       :items [(scrollable (table :model dp/AI-table-model))
-                               (scrollable (table :model dp/AO-table-model))
-                               (scrollable (table :model dp/DI-table-model))
-                               (scrollable (table :model dp/DO-table-model))
+                       :items [(make-dp-table-panel "模拟量输入" dp/AI-table-model)
+                               (make-dp-table-panel "模拟量输出" dp/AO-table-model)
+                               (make-dp-table-panel "开关量输入" dp/DI-table-model)
+                               (make-dp-table-panel "开关量输出" dp/DO-table-model)
                                ])
    :south (flow-panel :items [(password :id :unlock-password
                                         :size [320 :by 32])
@@ -707,6 +720,7 @@
     (if (not (or (nil? pwd) (empty? pwd)))
       (do
         (reset! lock-password (clojure.string/lower-case pwd))
+        (config! (select lock-panel [:#unlock-password]) :text "")
         (.setVisible main-menu false)
         (show-card! mcs-panels :lock-panel)))))
 
@@ -764,12 +778,11 @@
             menu-item-scada-stop ])
    (menu
     :text "查看  "
-    :items [(seesaw.action/action :name "拓扑排序"
-                                  :handler sort-blocks-by-topology!)
+    :items [
             (seesaw.action/action :name "块号排序"
                                   :handler sort-blocks-by-id!)
-            (seesaw.action/action :name "切换全屏"
-                                  :handler toggle-full-screen-view!)
+;; (seesaw.action/action :name "切换全屏" :handler toggle-full-screen-view!)
+;; (seesaw.action/action :name "拓扑排序" :handler sort-blocks-by-topology!)
             ])
    (menu
     :text "帮助  "
