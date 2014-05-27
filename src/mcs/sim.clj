@@ -162,7 +162,9 @@
               (if (db/connect! @simulation-context)
                 (do
                   (swap! simulation-context #(assoc % :db-connected? true))
-                  (db/write-project! [{}
+                  (db/write-project! [{:host "127.0.0.1"
+                                       :port 27017
+                                       :db-name "scada"}
                                       @bs/blocks 
                                       @(:AI dp/data-point-tables)
                                       @(:AO dp/data-point-tables)
