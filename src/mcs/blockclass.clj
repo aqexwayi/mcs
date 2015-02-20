@@ -491,6 +491,13 @@
         dv (- ai1 ai2) ]
     [(not (< l dv h))]))
 
+(defn start-signal [ctx block]
+  (let [t (get-block-input-value ctx block "T")
+        interval (:interval ctx)
+        clock (get ctx :clock 0)
+        ]
+    [(< clock (/ t interval))]))
+
 (defn wrap [f]
   (fn [ctx block]
     (let [bid (Integer/parseInt (:block-id block))
@@ -542,7 +549,7 @@
               {:name "K" :desc "增益" :type :real :default 1.0 }
               {:name "RATE" :desc "输出限速" :type :real :default 1.0
                :link false :link-block-id "0" }
-              {:name "TS" :desc "跟踪标志" :type :bool :default false
+              {:name "TS" :desc "跟踪标志" :type :bool :default true
                :link false :link-block-id "0" :change-online false
                }
               {:name "AI" :desc "AI" :type :real :default 0.0
@@ -1087,6 +1094,7 @@
     :outputs [:real]
     :function dmc
     }
+   
    {:type-name "脉冲计数器"
     :inputs [ {:name "DI" :desc "DI" :type :bool :default false :mode :link 
                :link true :link-block-id "0"} ]
@@ -1100,6 +1108,12 @@
                   (case [di1 di0]
                     [false true] (update-context ctx {bid (inc c)})
                     (update-context ctx {bid c}))))
+    }
+
+   {:type-name "启动信号"
+    :inputs [ {:name "T" :desc "启动时间" :type :real :default 1.0 } ]
+    :outputs [:bool]
+    :function (wrap start-signal)
     }
    ])
 

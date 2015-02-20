@@ -54,7 +54,7 @@
   (swap! simulation-context #(assoc % :running false)))
 
 (defn controller-working? []
-  (> (count (:blocks-value @simulation-context)) 4))
+  (> (count (:blocks-value @simulation-context)) 6))
 
 (defn push-blocks [ctx m]
   (update-in ctx [:blocks-value] conj m))
