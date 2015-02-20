@@ -265,10 +265,16 @@
                (handle-parameter-used-as-array-size nps bc)
                nps)
         nb (assoc b :inputs nps2)
-        nbs (replace-block nb @blocks) ]
+        ;; nbs (replace-block nb @blocks)
+        ]
     (reset! current-block nb)
-    (reset! blocks nbs)
+    ;; (reset! blocks nbs)
     ))
+
+(defn apply-current-block! []
+  (let [b @current-block
+        bs (replace-block b @blocks)]
+    (reset! blocks bs)))
 
 (defn change-link-id-for-parameter [para old-id new-id]
   (if (= (:link-block-id para) old-id) 

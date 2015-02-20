@@ -215,6 +215,14 @@
                     (alert main-frame "不正确的参数！")))
                 (alert main-frame "不正确的参数！")))))))))
 
+(defn apply-block-parameter [e]
+  (if (-> (dialog :option-type :ok-cancel
+                  :content "你确定要使用新的参数吗？")
+            pack!
+            center-dialog!
+            show!)
+    (bs/apply-current-block!)))
+
 (def link-blocks (atom []))
 
 (defn clear-link-blocks []
@@ -463,7 +471,10 @@
      :center (scrollable tbl)
      :south (flow-panel
              :items [(button :text "编辑"
-                             :listen [:action edit-block-parameter])]
+                             :listen [:action edit-block-parameter])
+                     (button :text "应用"
+                             :listen [:action apply-block-parameter])
+                     ]
              :align :right)
      :vgap 5 :hgap 5 :border 5)))
 
